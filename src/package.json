@@ -1,0 +1,22 @@
+{
+  "name": "ucto-cli",
+  "displayName": "UCTO Extension",
+  "description": "VS Code extension for UCTO CLI integration",
+  "version": "1.0.0",
+  "publisher": "ucto",
+  "engines": { "vscode": "^1.80.0" },
+  "activationEvents": [
+    "onCommand:ucto.init",
+    "onCommand:ucto.sprint",
+    "onCommand:ucto.agent",
+    "onCommand:ucto.deploy"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "ucto.init", "title": "UCTO: Init Project" },
+      { "command": "ucto.sprint", "title": "UCTO: Run Sprint" },
+      { "command": "ucto.agent", "title": "UCTO: Trigger Agent" },
+      { "command": "ucto.deploy", "title": "UCTO: Deploy" }
+    ]
+  }
+}
