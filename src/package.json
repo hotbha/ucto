@@ -1,22 +1,70 @@
 {
   "name": "ucto-cli",
   "displayName": "UCTO Extension",
-  "description": "VS Code extension for UCTO CLI integration",
+  "description": "VS Code extension for UCTO CLI integration - Agentic AI Platform for Automated Agile App Development",
   "version": "1.0.0",
   "publisher": "ucto",
+  "icon": "icon.png",
   "engines": { "vscode": "^1.80.0" },
+  "categories": ["Other", "Programming Languages", "Formatters"],
   "activationEvents": [
     "onCommand:ucto.init",
     "onCommand:ucto.sprint",
     "onCommand:ucto.agent",
-    "onCommand:ucto.deploy"
+    "onCommand:ucto.deploy",
+    "onCommand:ucto.showTraceability",
+    "onCommand:ucto.generateCicd"
   ],
   "contributes": {
     "commands": [
       { "command": "ucto.init", "title": "UCTO: Init Project" },
       { "command": "ucto.sprint", "title": "UCTO: Run Sprint" },
       { "command": "ucto.agent", "title": "UCTO: Trigger Agent" },
-      { "command": "ucto.deploy", "title": "UCTO: Deploy" }
-    ]
+      { "command": "ucto.deploy", "title": "UCTO: Deploy" },
+      { "command": "ucto.showTraceability", "title": "UCTO: Show Traceability Panel" },
+      { "command": "ucto.generateCicd", "title": "UCTO: Generate CI/CD Workflow" }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "ucto.showTraceability",
+          "when": "view == uctoTraceabilityView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "ucto": [
+        {
+          "id": "uctoTraceabilityView",
+          "name": "Traceability Matrix"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ucto",
+          "title": "UCTO",
+          "icon": "$(symbol-key)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "UCTO",
+      "properties": {
+        "ucto.backendUrl": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "UCTO Backend API URL"
+        },
+        "ucto.defaultTier": {
+          "type": "string",
+          "default": "FREE",
+          "enum": ["FREE", "STARTUP", "GROWTH", "ENTERPRISE"],
+          "description": "Default subscription tier for new projects"
+        }
+      }
+    }
   }
 }
