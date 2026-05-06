@@ -2,6 +2,7 @@ package com.ucto.backend.service;
 
 import com.ucto.backend.entity.AgentRun;
 import com.ucto.backend.repository.AgentRunRepository;
+import com.ucto.backend.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,9 @@ public class UsageMeterService {
 
     @Autowired
     private AgentRunRepository agentRunRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
 
     public void recordAgentRun(Long userId, String agentType) {
         AgentRun run = new AgentRun();
@@ -30,8 +34,6 @@ public class UsageMeterService {
     }
 
     public int getProjectCount(Long userId) {
-        // Delegate to ProjectRepository for actual count
-        // For usage checks, we keep it simple
-        return 0; // Will be overridden by actual project count
+        return (int) projectRepository.countByOwnerId(userId);
     }
 }

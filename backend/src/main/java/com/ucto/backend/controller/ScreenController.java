@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +44,7 @@ public class ScreenController {
             screen.setStatus("PENDING");
             screen.setStorageUrl((String) request.get("storageUrl"));
             screen.setMimeType((String) request.get("mimeType"));
+            screen.setRevisionCount(0);
             screen = screenRepository.save(screen);
 
             auditLogService.log(userId, screen.getProjectId(), "SCREEN_CREATED",
@@ -54,6 +56,16 @@ public class ScreenController {
         }
     }
 
+    /**
+     * Update screen status with approval/rejection state machine enforcement.
+     * 
+     * Valid transitions (per docs/screen_review.md & docs/state_machines.md):
+     *   PENDING -> APPROVED (sets approvedBy, approvedAt)
+     *   PENDING -> REJECTED (increments revisionCount, max 3)
+     *   PENDING -> CHANGES_REQUESTED (increments revisionCount, max 3)
+     *   CHANGES_REQUESTED -> PENDING (revision cycle continues)
+     *   REJECTED -> PENDING (revision cycle continues)
+     */
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateScreenStatus(@PathVariable Long id,
                                                  @RequestBody Map<String, String> request,
@@ -64,6 +76,47 @@ public class ScreenController {
 
         String newStatus = request.get("status");
         String feedback = request.get("feedback");
+        Long userId = getUserId(auth);
+
+        // State machine enforcement
+        switch (newStatus) {
+            case "APPROVED":
+                if (!"PENDING".equals(screen.getStatus())) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Only PENDING screens can be approved"));
+                }
+                screen.setApprovedBy(userId);
+                screen.setApprovedAt(LocalDateTime.now());
+                break;
+
+            case "REJECTED":
+                if (!"PENDING".equals(screen.getStatus())) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Only PENDING screens can be rejected"));
+                }
+                screen.setRevisionCount(screen.getRevisionCount() + 1);
+                if (screen.getRevisionCount() >= 3) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Maximum revision limit (3) reached for this screen. Screen must be approved or re-created."));
+                }
+                break;
+
+            case "CHANGES_REQUESTED":
+                if (!"PENDING".equals(screen.getStatus())) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Only PENDING screens can request changes"));
+                }
+                screen.setRevisionCount(screen.getRevisionCount() + 1);
+                if (screen.getRevisionCount() >= 3) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Maximum revision limit (3) reached for this screen. Screen must be approved or re-created."));
+                }
+                break;
+
+            default:
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid status: " + newStatus + ". Must be one of: APPROVED, REJECTED, CHANGES_REQUESTED"));
+        }
 
         screen.setStatus(newStatus);
         if (feedback != null) {
@@ -71,7 +124,6 @@ public class ScreenController {
         }
         screen = screenRepository.save(screen);
 
-        Long userId = getUserId(auth);
         auditLogService.log(userId, screen.getProjectId(), "SCREEN_" + newStatus.toUpperCase(),
                 "Screen status: " + newStatus + (feedback != null ? " - " + feedback : ""),
                 httpRequest.getRemoteAddr(), true);

@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Build your app with AI-powered agents',
                     style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
                     textAlign: TextAlign.center,
@@ -83,12 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: Icons.g_mobiledata,
                     label: 'Continue with Google',
                     onTap: () => context.read<AuthBloc>().add(AuthGoogleLoginRequested()),
-                  ),
-                  const SizedBox(height: 12),
-                  _SocialButton(
-                    icon: Icons.facebook,
-                    label: 'Continue with Facebook',
-                    onTap: () => context.read<AuthBloc>().add(AuthFacebookLoginRequested()),
                   ),
                   const SizedBox(height: 24),
 
@@ -144,6 +138,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text("Don't have an account? Sign Up"),
                     ),
                     const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                      child: const Text('Forgot Password?'),
+                    ),
+                    const SizedBox(height: 4),
                     TextButton(
                       onPressed: () => setState(() => _showOtpFlow = true),
                       child: const Text('Sign in with Phone (OTP)'),

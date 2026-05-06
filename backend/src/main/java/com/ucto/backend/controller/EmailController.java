@@ -1,17 +1,24 @@
 package com.ucto.backend.controller;
 
-import com.ucto.backend.dto.PasswordResetRequest;
-import com.ucto.backend.repository.UserRepository;
-import com.ucto.backend.service.AuditLogService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-import java.util.UUID;
+import com.ucto.backend.dto.PasswordResetRequest;
+import com.ucto.backend.repository.UserRepository;
+import com.ucto.backend.service.AuditLogService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/email")
@@ -71,9 +78,9 @@ public class EmailController {
         String token = UUID.randomUUID().toString();
         passwordResetTokens.put(token, request.getEmail());
 
-        // In production: send via Zoho SMTP
+        // Flutter web will read the token from the URL and call /api/email/reset-password
         System.out.println("Password reset for " + request.getEmail()
-                + ": http://localhost:5173/reset-password?token=" + token);
+                + ": http://localhost:3000/reset-password?token=" + token);
 
         auditLogService.logAuthAction(userOpt.get().getId(), "PASSWORD_RESET_REQUESTED",
                 "Password reset requested", httpRequest.getRemoteAddr(), true);

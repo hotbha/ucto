@@ -138,9 +138,95 @@ public class SubscriptionService {
 
     @Transactional
     public void handleChargebeeWebhook(String eventType, Map<String, Object> payload) {
-        // TODO: Implement Chargebee webhook handling
-        // event types: subscription_created, subscription_cancelled, subscription_renewed
-        // Extract chargebee_subscription_id, plan_id, status, etc.
         System.out.println("Chargebee webhook received: " + eventType);
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> subscription = (Map<String, Object>) payload.get("subscription");
+
+            if (subscription == null) {
+                System.out.println("Chargebee webhook: No subscription object in payload");
+                return;
+            }
+
+            String chargebeeSubId = (String) subscription.get("id");
+            String planId = (String) subscription.get("plan_id");
+            String status = (String) subscription.get("status");
+            String customerId = (String) subscription.get("customer_id");
+
+            if (chargebeeSubId == null) {
+                System.out.println("Chargebee webhook: No subscription id in payload");
+                return;
+            }
+
+            // Map Chargebee plan IDs to UCTO tiers
+            String tier = mapChargebeePlanToTier(planId);
+
+            switch (eventType) {
+                case "subscription_created":
+                case "subscription_renewed":
+                    // Create or update subscription in our system
+                    Long userId = findUserIdByChargebeeCustomerId(customerId);
+                    if (userId != null) {
+                        Subscription sub = createSubscription(userId, tier);
+                        sub.setChargebeeSubscriptionId(chargebeeSubId);
+                        subscriptionRepository.save(sub);
+                        System.out.println("Chargebee: Subscription " + chargebeeSubId + " created/renewed for user " + userId);
+                    } else {
+                        System.out.println("Chargebee: No user found for customer " + customerId);
+                    }
+                    break;
+
+                case "subscription_cancelled":
+                    // Find and cancel the subscription
+                    Optional<Subscription> existingSub = subscriptionRepository.findByChargebeeSubscriptionId(chargebeeSubId);
+                    existingSub.ifPresent(sub -> {
+                        sub.setStatus("CANCELLED");
+                        sub.setEndDate(LocalDateTime.now());
+                        subscriptionRepository.save(sub);
+                        System.out.println("Chargebee: Subscription " + chargebeeSubId + " cancelled");
+                    });
+                    break;
+
+                case "subscription_updated":
+                    // Handle plan changes, status updates
+                    Optional<Subscription> updatedSub = subscriptionRepository.findByChargebeeSubscriptionId(chargebeeSubId);
+                    updatedSub.ifPresent(sub -> {
+                        sub.setTier(tier);
+                        if ("cancelled".equals(status)) {
+                            sub.setStatus("CANCELLED");
+                        } else if ("non_renewing".equals(status)) {
+                            sub.setEndDate(LocalDateTime.now());
+                        }
+                        subscriptionRepository.save(sub);
+                        System.out.println("Chargebee: Subscription " + chargebeeSubId + " updated");
+                    });
+                    break;
+
+                default:
+                    System.out.println("Chargebee: Unhandled event type: " + eventType);
+            }
+        } catch (Exception e) {
+            System.err.println("Chargebee webhook processing error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String mapChargebeePlanToTier(String planId) {
+        if (planId == null) return "FREE";
+        String upper = planId.toUpperCase();
+        if (upper.contains("STARTUP")) return "STARTUP";
+        if (upper.contains("GROWTH")) return "GROWTH";
+        if (upper.contains("ENTERPRISE")) return "ENTERPRISE";
+        return "FREE";
+    }
+
+    private Long findUserIdByChargebeeCustomerId(String customerId) {
+        if (customerId == null) return null;
+        try {
+            return Long.parseLong(customerId.replaceAll("[^0-9]", ""));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

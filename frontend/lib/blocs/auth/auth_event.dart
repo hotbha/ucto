@@ -20,7 +20,6 @@ class AuthRegisterRequested extends AuthEvent {
 
 class AuthGoogleLoginRequested extends AuthEvent {}
 
-class AuthFacebookLoginRequested extends AuthEvent {}
 
 class AuthOtpSendRequested extends AuthEvent {
   final String phoneNumber;

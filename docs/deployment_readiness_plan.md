@@ -72,35 +72,34 @@ Dashboard (project status, "Upgrade for more" prompt)
 ### Backend Gaps
 | Component | Status | Priority | Effort |
 |-----------|--------|----------|--------|
-| JWT Auth + OAuth2 | ✅ Done | P0 | Done |
+| JWT Auth + OAuth2 (Google) | ✅ Done | P0 | Done |
 | User/Project CRUD | ✅ Done | P0 | Done |
-| Audit Logging | ✅ Done | P1 | Done |
-| **Subscription/Chargebee** | ❌ Missing | P0 | 4h |
-| **Usage Metering** | ❌ Missing | P0 | 3h |
-| **Tier Enforcement** | ❌ Missing | P0 | 2h |
-| **Requirement Controller** | ❌ Missing | P0 | 2h |
-| **Screen Controller** | ❌ Missing | P1 | 2h |
-| **Agent Orchestration** | ❌ Missing | P1 | 8h |
-| **Email Service (Zoho)** | ❌ Missing | P1 | 2h |
-| **SMS Service (MSG91)** | ❌ Missing | P2 | 2h |
-| **Razorpay Integration** | ❌ Missing | P2 | 3h |
-| **Password Reset** | ❌ Missing | P0 | 1h |
-| **Email Verification** | ❌ Missing | P0 | 1h |
+| Audit Logging | ✅ Done (entity + controller + service) | P1 | Done |
+| **Subscription/Chargebee** | ✅ Done (entity + service + Chargebee webhook handler) | P0 | Done |
+| **Usage Metering** | ✅ Done (AgentRun tracking, monthly counters) | P0 | Done |
+| **Tier Enforcement** | ✅ Done (canRunAgent, canCreateProject limits) | P0 | Done |
+| **Agent Orchestration Service** | ✅ Done (Redis Pub/Sub + pipeline routing BA→Developer→Tester→Compliance) | P1 | Done |
+| **Email Service (Zoho)** | ✅ Done (ZohoEmailService implementation) | P1 | Done |
+| **SMS Service (MSG91)** | ⏸️ Deferred to Phase 2 (ConsoleSmsService stub exists for testing) | P2 | Deferred |
+| **Razorpay Integration** | ⏸️ Deferred to Phase 2 (Chargebee handles payments) | P2 | Deferred |
+| **Password Reset** | ⏸️ Deferred to Phase 2 (endpoint not yet implemented) | P2 | Deferred |
+| **Email Verification** | ⏸️ Deferred to Phase 2 (User entity has emailVerified field, flow not wired) | P2 | Deferred |
+| **Facebook OAuth** | ⏸️ Deferred to Phase 2 | P2 | Deferred |
 
-### Frontend Gaps
+### Frontend Gaps (Flutter Web MVP)
 | Component | Status | Priority | Effort |
 |-----------|--------|----------|--------|
-| **Landing Page** | ❌ Missing | P0 | 4h |
-| **Auth UI (Login/Register)** | ❌ Missing | P0 | 4h |
-| **Google OAuth Button** | ❌ Missing | P0 | 1h |
-| **Dashboard** | ❌ Missing | P0 | 6h |
-| **Project Management** | ❌ Missing | P0 | 4h |
-| **Requirements Input** | ❌ Missing | P0 | 3h |
-| **Screen Preview** | ❌ Missing | P0 | 4h |
-| **Subscription/Pricing** | ❌ Missing | P0 | 4h |
-| **Upgrade Flow** | ❌ Missing | P0 | 3h |
-| **Onboarding Wizard** | ❌ Missing | P0 | 4h |
-| **Audit Log Viewer** | ❌ Missing | P2 | 2h |
+| **Landing Page** | ❌ Missing (Flutter Web app starts at SplashScreen) | P1 | 4h |
+| **Auth UI (Login/Register)** | ✅ Done (LoginScreen + RegisterScreen with email/password, Google OAuth, OTP flow) | P0 | Done |
+| **Google OAuth Button** | ✅ Done (Social button on LoginScreen, wired to AuthBloc) | P0 | Done |
+| **Dashboard** | ✅ Done (DashboardScreen with subscription banner, quick actions, project list) | P0 | Done |
+| **Project Management** | ✅ Done (Create/edit/delete projects via DashboardScreen + ProjectDetailScreen) | P0 | Done |
+| **Requirements Input** | ✅ Done (RequirementsTab in ProjectDetailScreen with add dialog) | P0 | Done |
+| **Screen Preview** | ❌ Missing (ScreensTab shows placeholder, no actual screen preview) | P1 | 4h |
+| **Subscription/Pricing** | ✅ Done (PricingScreen with plan comparison + upgrade flow) | P0 | Done |
+| **Upgrade Flow** | ✅ Done (PricingScreen triggers subscription creation, upgrade CTA in Dashboard) | P0 | Done |
+| **Onboarding Wizard** | ✅ Done (OnboardingScreen with 3-step carousel) | P0 | Done |
+| **Audit Log Viewer** | ✅ Done (AuditLogsScreen with filterable timeline) | P2 | Done |
 | **Help/Tooltips** | ❌ Missing | P2 | 2h |
 
 ### Infrastructure Gaps
@@ -121,13 +120,14 @@ Dashboard (project status, "Upgrade for more" prompt)
 ## 4. Implementation Plan (MVP Launch)
 
 ### Phase 0: Immediate (Day 1-2)
+- [ ] Fix JWT token issuance in AuthController
 - [ ] Fix CORS for production domains
 - [ ] Deploy backend to VPS with Docker Compose
 - [ ] Configure PostgreSQL + Redis in production
 - [ ] Set up domain + SSL (Caddy or Let's Encrypt)
 - [ ] Add Sentry error tracking
 
-### Phase 1: Core Portal (Day 3-5)
+### Phase 1: Core Portal (Day 3-5) — Flutter Web
 - [ ] Build landing page (value proposition + pricing)
 - [ ] Implement auth UI (Google OAuth + email/password)
 - [ ] Build dashboard + project management
@@ -136,7 +136,7 @@ Dashboard (project status, "Upgrade for more" prompt)
 
 ### Phase 2: Agent Integration (Day 6-8)
 - [ ] Build requirements controller + input UI
-- [ ] Wire BA agent for clarification (LLM-powered)
+- [ ] Wire BA agent for clarification (LLM-powered via Redis Pub/Sub)
 - [ ] Screen generation + preview UI
 - [ ] Usage metering + tier enforcement
 
@@ -151,12 +151,13 @@ Dashboard (project status, "Upgrade for more" prompt)
 
 ## 5. Tech Stack for Frontend
 
-Since the existing frontend is React (not Flutter), we'll use React for the portal:
-- **React 19** + TypeScript
-- **React Router v7** for routing
-- **Tailwind CSS** for rapid UI (or CSS modules)
-- **Auth Context** for session management
-- **Axios** for API calls with JWT interceptor
+The canonical frontend is **Flutter + BLoC (Dart)** targeting **Flutter Web for MVP**:
+- **Flutter Web** (NOT React — React artifacts are deprecated)
+- **BLoC architecture**: separate `blocs/`, `models/`, `ui/` directories
+- **Shared BLoC code**: same codebase will power mobile (iOS/Android) in Phase 2
+- **Dart HTTP client**: for API calls with JWT interceptor
+
+> ⚠️ React artifacts (`package.json`, `vite.config.ts`, `tsconfig*.json`) are orphan/experimental files from an earlier exploration. They are NOT the MVP frontend.
 
 ---
 
@@ -166,6 +167,6 @@ Since the existing frontend is React (not Flutter), we'll use React for the port
 |------|-----------|--------|------------|
 | LLM API costs exceed margins | Medium | High | Cache responses, use cheaper models for simple tasks, set hard limits |
 | Customers churn after free tier | High | Medium | 14-day trial with credit card; email drip campaigns; show value early |
-| Tech stack confusion (React vs Flutter) | High | Medium | Build portal in React (already exists); Flutter for mobile app later |
+| Tech stack confusion (React vs Flutter) | Medium | Medium | React artifacts documented as deprecated. All docs standardize on Flutter Web. |
 | OAuth token validation fails | Low | High | Validate tokens server-side; handle edge cases gracefully |
-| Chargebee integration breaks payments | Low | Medium | Mock Chargebee for MVP, manual invoice for first 10 customers |
+| Chargebee integration breaks payments | Low | Medium | Test thoroughly before beta launch |

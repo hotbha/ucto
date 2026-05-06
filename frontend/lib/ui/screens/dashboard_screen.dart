@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/subscription/subscription_bloc.dart';
 import '../../blocs/project/project_bloc.dart';
+import '../../models/project.dart';
+import '../widgets/help_tooltip.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,6 +21,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     context.read<ProjectBloc>().add(LoadProjects());
   }
 
+  void _navigateToProjectDetail(Project project) {
+    Navigator.pushNamed(context, '/project/${project.id}');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -28,6 +34,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: const Color(0xFF0F172A),
         title: const Text('UCTO Dashboard'),
         actions: [
+          HelpTooltip(
+            message: 'Welcome to UCTO! Create a project, add requirements, run agents to generate screens and code.',
+          ),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.logout, color: Color(0xFF94A3B8)),
             onPressed: () => context.read<AuthBloc>().add(AuthLogoutRequested()),
@@ -39,6 +49,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // First-time user banner (shown when no projects exist)
+            BlocBuilder<ProjectBloc, ProjectState>(
+              builder: (context, state) {
+                if (state is ProjectsLoaded && state.projects.isEmpty) {
+                  return Card(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.lightbulb_outline, color: Color(0xFF7C3AED), size: 24),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Welcome to UCTO! Start by creating your first project.',
+                                  style: const TextStyle(color: Color(0xFFF1F5F9), fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Create a project and describe your idea. Our AI agents will generate requirements, screens, and code for you.',
+                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showCreateProjectDialog(context),
+                              icon: const Icon(Icons.add_circle_outline, size: 18),
+                              label: const Text('Create Your First Project'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF7C3AED),
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+            const SizedBox(height: 16),
+
             // Subscription Banner
             BlocBuilder<SubscriptionBloc, SubscriptionState>(
               builder: (context, state) {
@@ -54,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Text('Plan: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                                    const Text('Plan: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                                     _TierBadge(tier: state.usage.tier),
                                   ],
                                 ),
@@ -102,20 +163,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 24),
 
+            // Project List
+            BlocBuilder<ProjectBloc, ProjectState>(
+              builder: (context, state) {
+                if (state is ProjectsLoaded && state.projects.isNotEmpty) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Your Projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFF1F5F9))),
+                      const SizedBox(height: 12),
+                      ...state.projects.map((project) => Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.folder_outlined, color: Color(0xFF7C3AED)),
+                          ),
+                          title: Text(project.title, style: const TextStyle(color: Color(0xFFF1F5F9), fontWeight: FontWeight.w500)),
+                          subtitle: Text(project.status, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                          trailing: const Icon(Icons.chevron_right, color: Color(0xFF64748B)),
+                          onTap: () => _navigateToProjectDetail(project),
+                        ),
+                      )),
+                      const SizedBox(height: 16),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
             // Recent Activity
             const Text('Recent Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFF1F5F9))),
             const SizedBox(height: 12),
-            Card(
+            const Card(
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Center(
                   child: Column(
                     children: [
                       Icon(Icons.inbox_outlined, size: 40, color: Color(0xFF334155)),
-                      const SizedBox(height: 8),
-                      const Text('No recent activity', style: TextStyle(color: Color(0xFF94A3B8))),
-                      const SizedBox(height: 4),
-                      const Text('Create a project to get started', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                      SizedBox(height: 8),
+                      Text('No recent activity', style: TextStyle(color: Color(0xFF94A3B8))),
+                      SizedBox(height: 4),
+                      Text('Create a project to get started', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
                     ],
                   ),
                 ),
@@ -222,9 +317,9 @@ class _TierBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: (colors[tier] ?? const Color(0xFF22C55E)).withOpacity(0.2),
+        color: (colors[tier] ?? const Color(0xFF22C55E)).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: (colors[tier] ?? const Color(0xFF22C55E)).withOpacity(0.3)),
+        border: Border.all(color: (colors[tier] ?? const Color(0xFF22C55E)).withValues(alpha: 0.3)),
       ),
       child: Text(tier.replaceAll('_', ' '), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: colors[tier] ?? const Color(0xFF22C55E))),
     );

@@ -61,18 +61,56 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable Long id,
-                                            @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updateProject(@PathVariable Long id,@RequestBody Map<String, String> request,
+                                            Authentication auth,
+                                            HttpServletRequest httpRequest) {
+        Project project = projectService.getProjectById(id);
+        if (project == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Long userId = getUserId(auth);
+        // Owner-only authorization check
+        if (!project.getOwnerId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Only the project owner can update this project"));
+        }
+
         Project updated = projectService.updateProject(
                 id,
                 request.get("title"),
                 request.get("description"),
                 request.get("status")
         );
-        if (updated == null) {
+
+        auditLogService.log(userId, id, "PROJECT_UPDATE",
+                "Updated project: " + updated.getTitle(), httpRequest.getRemoteAddr(), true);
+
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProject(@PathVariable Long id,
+                                           Authentication auth,
+                                           HttpServletRequest httpRequest) {
+        Project project = projectService.getProjectById(id);
+        if (project == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(updated);
+
+        Long userId = getUserId(auth);
+        // Owner-only authorization check
+        if (!project.getOwnerId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Only the project owner can delete this project"));
+        }
+
+        projectService.deleteProject(id);
+
+        auditLogService.log(userId, id, "PROJECT_DELETE",
+                "Deleted project: " + project.getTitle(), httpRequest.getRemoteAddr(), true);
+
+        return ResponseEntity.ok(Map.of("message", "Project deleted successfully"));
     }
 
     private Long getUserId(Authentication auth) {

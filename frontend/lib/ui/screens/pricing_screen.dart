@@ -128,12 +128,12 @@ class _CurrentPlanBanner extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Current Plan', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                const Text('Current Plan', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                 _TierBadge(tier: usage.tier),
               ],
             ),
             const SizedBox(height: 12),
-            Text('${usage.runsUsed}/${usage.maxAgentRuns} agent runs this month', style: TextStyle(fontSize: 13, color: Color(0xFFF1F5F9))),
+            Text('${usage.runsUsed}/${usage.maxAgentRuns} agent runs this month', style: const TextStyle(fontSize: 13, color: Color(0xFFF1F5F9))),
             const SizedBox(height: 4),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
@@ -145,7 +145,7 @@ class _CurrentPlanBanner extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text('${usage.projectsUsed}/${usage.maxProjects} projects', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+            Text('${usage.projectsUsed}/${usage.maxProjects} projects', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
           ],
         ),
       ),
@@ -163,9 +163,9 @@ class _TierBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: (colors[tier] ?? const Color(0xFF22C55E)).withOpacity(0.2),
+        color: (colors[tier] ?? const Color(0xFF22C55E)).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: (colors[tier] ?? const Color(0xFF22C55E)).withOpacity(0.3)),
+        border: Border.all(color: (colors[tier] ?? const Color(0xFF22C55E)).withValues(alpha: 0.3)),
       ),
       child: Text(tier.replaceAll('_', ' '), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: colors[tier] ?? const Color(0xFF22C55E))),
     );
@@ -215,7 +215,7 @@ class _PlanCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
                         child: Text('Popular', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
                       ),
                     ],
@@ -223,7 +223,7 @@ class _PlanCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: const Color(0xFF22C55E).withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: const Color(0xFF22C55E).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
                         child: const Text('Current', style: TextStyle(fontSize: 10, color: Color(0xFF22C55E), fontWeight: FontWeight.w600)),
                       ),
                     ],
@@ -232,8 +232,8 @@ class _PlanCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Text(price, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF1F5F9))),
-            Text(priceSub, style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+            Text(price, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF1F5F9))),
+            Text(priceSub, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
             const SizedBox(height: 16),
             ...features.map((f) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),

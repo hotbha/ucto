@@ -54,8 +54,8 @@ class ApiService {
     }
   }
 
-  // HTTP Methods
-  Future<Map<String, dynamic>> get(String endpoint, {bool auth = true}) async {
+  // HTTP Methods - return dynamic to support both JSON objects and arrays
+  Future<dynamic> get(String endpoint, {bool auth = true}) async {
     final response = await http.get(
       Uri.parse('$baseUrl$endpoint'),
       headers: await _headers(auth: auth),
@@ -63,7 +63,7 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> body,
+  Future<dynamic> post(String endpoint, Map<String, dynamic> body,
       {bool auth = false}) async {
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
@@ -73,7 +73,7 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> put(String endpoint, Map<String, dynamic> body,
+  Future<dynamic> put(String endpoint, Map<String, dynamic> body,
       {bool auth = true}) async {
     final response = await http.put(
       Uri.parse('$baseUrl$endpoint'),
@@ -83,7 +83,7 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> delete(String endpoint,
+  Future<dynamic> delete(String endpoint,
       {bool auth = true}) async {
     final response = await http.delete(
       Uri.parse('$baseUrl$endpoint'),
@@ -92,12 +92,15 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  Map<String, dynamic> _handleResponse(http.Response response) {
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+  dynamic _handleResponse(http.Response response) {
+    final decoded = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return body;
+      return decoded;
     } else {
-      throw ApiException(body['error'] ?? 'Unknown error', response.statusCode);
+      final errorMsg = decoded is Map<String, dynamic>
+          ? (decoded['error'] ?? 'Unknown error') as String
+          : 'Unknown error';
+      throw ApiException(errorMsg, response.statusCode);
     }
   }
 }

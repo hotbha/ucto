@@ -25,6 +25,9 @@ public class Requirement {
     @Column(nullable = false)
     private Long createdBy; // References User.id
 
+    // BA clarification round tracking (max 3 rounds per docs/ucto_playbook.md)
+    private int clarificationRound;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -57,6 +60,9 @@ public class Requirement {
 
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
+
+    public int getClarificationRound() { return clarificationRound; }
+    public void setClarificationRound(int clarificationRound) { this.clarificationRound = clarificationRound; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

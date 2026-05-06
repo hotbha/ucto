@@ -29,6 +29,13 @@ public class Screen {
 
     private String mimeType; // image/png, application/json, etc.
 
+    // Revision tracking for screen review workflow
+    private int revisionCount; // How many times this screen has been revised (max 3)
+
+    private Long approvedBy; // User ID who approved this screen
+
+    private LocalDateTime approvedAt; // When the screen was approved
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -67,6 +74,15 @@ public class Screen {
 
     public String getMimeType() { return mimeType; }
     public void setMimeType(String mimeType) { this.mimeType = mimeType; }
+
+    public int getRevisionCount() { return revisionCount; }
+    public void setRevisionCount(int revisionCount) { this.revisionCount = revisionCount; }
+
+    public Long getApprovedBy() { return approvedBy; }
+    public void setApprovedBy(Long approvedBy) { this.approvedBy = approvedBy; }
+
+    public LocalDateTime getApprovedAt() { return approvedAt; }
+    public void setApprovedAt(LocalDateTime approvedAt) { this.approvedAt = approvedAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

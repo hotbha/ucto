@@ -73,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Agentic AI for App Development',
                 style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
               ),

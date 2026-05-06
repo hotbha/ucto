@@ -17,5 +17,5 @@
 - A/B testing support.
 
 ## Agent Ecosystem Updates
-- Solutions Architect Agent added.
-- Optional Analytics Agent for growth tier.
+- Solutions Architect Agent — Phase 1 implemented (agent.architect topics in Redis Pub/Sub, routed via AgentEventListener).
+- Optional Analytics Agent for growth tier (Phase 2).

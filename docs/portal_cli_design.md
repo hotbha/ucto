@@ -35,7 +35,6 @@
 
 ## Manifest
 See `package.json` for extension metadata and commands.
-# Portal & CLI Design
 
 [← Back to README](README.md) | Related: [ucto_playbook.md](ucto_playbook.md), [traceability_matrix.md](traceability_matrix.md)
 

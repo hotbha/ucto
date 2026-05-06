@@ -18,8 +18,7 @@ public class User {
 
     private String password; // For email/pass fallback
 
-    private String googleId;
-    private String facebookId;
+    private String googleId; // MVP only; Facebook OAuth deferred to Phase 2
     private String phoneNumber; // For OTP
 
     @Column(nullable = false)
@@ -56,9 +55,6 @@ public class User {
 
     public String getGoogleId() { return googleId; }
     public void setGoogleId(String googleId) { this.googleId = googleId; }
-
-    public String getFacebookId() { return facebookId; }
-    public void setFacebookId(String facebookId) { this.facebookId = facebookId; }
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }

@@ -33,6 +33,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/email/**").permitAll()
+                .requestMatchers("/api/subscriptions/webhook/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                 .anyRequest().authenticated()
             )
@@ -44,9 +46,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:5173",  // React/Vite dev
-            "http://localhost:3000",  // Alternative port
-            "http://localhost:8080"   // Flutter web dev
+            "http://localhost:8080",   // Flutter web dev
+            "http://localhost:3000",   // Alternative port
+            "http://localhost:80",     // Nginx for Flutter web
+            "http://localhost",        // Nginx root
+            "https://ucto.app",        // Production
+            "https://www.ucto.app",    // Production www
+            "https://app.ucto.app"     // Production subdomain
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

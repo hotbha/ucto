@@ -19,9 +19,11 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
   Future<void> _onLoadProjects(LoadProjects event, Emitter<ProjectState> emit) async {
     emit(ProjectLoading());
     try {
-      // Note: The backend returns a list at /api/projects
-      // This is a simplified version for MVP
-      emit(ProjectsLoaded([]));
+      final response = await _api.get('/projects', auth: true);
+      // Backend returns a JSON array, not HAL _embedded format
+      final list = response as List;
+      final projects = list.map((j) => Project.fromJson(j as Map<String, dynamic>)).toList();
+      emit(ProjectsLoaded(projects));
     } catch (e) {
       emit(ProjectError(e.toString()));
     }
@@ -35,7 +37,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
         'description': event.description,
         'tier': event.tier,
       }, auth: true);
-      final project = Project.fromJson(data);
+      final project = Project.fromJson(data as Map<String, dynamic>);
       emit(ProjectCreated(project));
     } catch (e) {
       emit(ProjectError(e.toString()));

@@ -12,7 +12,7 @@ class AuditLogsScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 48, color: Color(0xFF334155)),
+            const Icon(Icons.history, size: 48, color: Color(0xFF334155)),
             const SizedBox(height: 12),
             const Text('Audit logs available on paid plans', style: TextStyle(color: Color(0xFF94A3B8))),
             const SizedBox(height: 4),

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../blocs/auth/auth_bloc.dart';
+import '../../blocs/project/project_bloc.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -17,6 +20,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  void _onGetStarted() {
+    // Navigate to dashboard and prompt user to create first project
+    // Use pushAndRemoveUntil to clear onboarding from stack
+    Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
+    
+    // After a brief delay to let dashboard load, show create project dialog 
+    // by dispatching a first-time-user event
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (context.mounted) {
+        // The dashboard will check if user has projects and auto-prompt
+        // This is handled by DashboardScreen's FirstTimeUserBanner
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,19 +47,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _pageController,
                 onPageChanged: (i) => setState(() => _currentPage = i),
                 children: [
-                  _OnboardingPage(
+                  const _OnboardingPage(
                     icon: Icons.rocket_launch,
                     title: 'Welcome to UCTO!',
                     description: 'Build your full-stack startup app in hours, not months. Our AI agents work together to take you from idea to deployed app.',
                     step: 'Step 1 of 3',
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
                     icon: Icons.description,
                     title: 'Describe Your Idea',
                     description: 'Tell our Business Analyst agent what you want to build. The BA will clarify requirements and generate a detailed specification.',
                     step: 'Step 2 of 3',
                   ),
-                  _OnboardingPage(
+                  const _OnboardingPage(
                     icon: Icons.design_services,
                     title: 'Approve Screens & Deploy',
                     description: 'Preview AI-generated screens, approve or request changes. Once approved, your app is ready for deployment.',
@@ -74,7 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     if (_currentPage < 2) {
                       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                     } else {
-                      Navigator.pushReplacementNamed(context, '/dashboard');
+                      _onGetStarted();
                     }
                   },
                   child: Text(_currentPage < 2 ? 'Next' : 'Get Started'),
@@ -83,7 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             if (_currentPage < 2)
               TextButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/dashboard'),
+                onPressed: _onGetStarted,
                 child: const Text('Skip'),
               ),
             const SizedBox(height: 32),

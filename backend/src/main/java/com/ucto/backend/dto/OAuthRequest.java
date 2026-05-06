@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 public class OAuthRequest {
 
     @NotBlank
-    private String provider; // "google" or "facebook"
+    private String provider; // "google" (MVP only; Facebook deferred to Phase 2)
 
     @NotBlank
     private String token;    // OAuth access token from frontend

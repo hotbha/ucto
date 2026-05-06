@@ -31,7 +31,7 @@ class SubscriptionPlan {
 
   String get formattedPrice {
     if (price == 0) return 'Free';
-    return '₹${price ~/ 100},${price % 100 == 0 ? "${(price % 100).toString().padLeft(2, '0')}" : (price % 100).toString()}';
+    return '₹${price ~/ 100},${price % 100 == 0 ? (price % 100).toString().padLeft(2, '0') : (price % 100).toString()}';
   }
 
   String get formattedPriceUSD {

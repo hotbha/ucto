@@ -70,4 +70,12 @@ public class ProjectService {
     public List<ProjectMember> getProjectMembers(Long projectId) {
         return projectMemberRepository.findByProjectId(projectId);
     }
+
+    @Transactional
+    public void deleteProject(Long id) {
+        // Delete all project members first, then the project
+        projectMemberRepository.findByProjectId(id)
+                .forEach(member -> projectMemberRepository.delete(member));
+        projectRepository.deleteById(id);
+    }
 }

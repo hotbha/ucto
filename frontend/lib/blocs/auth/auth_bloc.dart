@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/user.dart';
 import '../../services/api_service.dart';
@@ -14,7 +13,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginRequested>(_onLogin);
     on<AuthRegisterRequested>(_onRegister);
     on<AuthGoogleLoginRequested>(_onGoogleLogin);
-    on<AuthFacebookLoginRequested>(_onFacebookLogin);
     on<AuthOtpSendRequested>(_onOtpSend);
     on<AuthOtpVerifyRequested>(_onOtpVerify);
     on<AuthLogoutRequested>(_onLogout);
@@ -82,21 +80,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final data = await _api.post('/auth/oauth', {
         'provider': 'google',
         'token': 'simulated_google_token',
-      }, auth: false);
-      await _api.storeTokens(data['accessToken'], data['refreshToken']);
-      final user = User.fromJson(data['user']);
-      emit(AuthAuthenticated(user));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-    }
-  }
-
-  Future<void> _onFacebookLogin(AuthFacebookLoginRequested event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-    try {
-      final data = await _api.post('/auth/oauth', {
-        'provider': 'facebook',
-        'token': 'simulated_fb_token',
       }, auth: false);
       await _api.storeTokens(data['accessToken'], data['refreshToken']);
       final user = User.fromJson(data['user']);

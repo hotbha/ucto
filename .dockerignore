@@ -1,0 +1,35 @@
+# =============================================================================
+# UCTO - Docker ignore
+# =============================================================================
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+**/target/
+**/build/
+**/node_modules/
+**/__pycache__/
+
+# Environment files
+.env
+.env.local
+*.log
+
+# Docs
+docs/
+
+# Other
+*.zip
+*.gz
+*.rar

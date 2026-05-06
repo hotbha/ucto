@@ -69,7 +69,7 @@ public class UserService {
         if (user.getPassword() == null) {
             auditLogService.logAuthAction(user.getId(), "LOGIN_FAILED",
                     "Account has no password (OAuth-only)", ipAddress, false);
-            throw new RuntimeException("This account uses social login. Please sign in with Google or Facebook.");
+            throw new RuntimeException("This account uses social login. Please sign in with Google.");
         }
 
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
@@ -81,9 +81,12 @@ public class UserService {
     }
 
     public AuthResponse authenticateWithOAuth(String provider, String oauthToken, String ipAddress) {
-        // In production, validate the OAuth token with Google/Facebook API
-        // For now, extract email from a mock (in real impl, call Google/Facebook token info endpoint)
-        // This is where you'd call Google Token Info or Facebook Debug Token API
+        // For MVP: only Google OAuth is supported per docs. Facebook deferred to Phase 2.
+        if (!"google".equals(provider)) {
+            throw new RuntimeException("Only Google OAuth is supported for MVP");
+        }
+        // In production, validate the OAuth token with Google API
+        // For now, extract email from a mock (in real impl, call Google Token Info endpoint)
         String email = provider + "_user_" + oauthToken.hashCode() + "@example.com";
         String name = "User";
         String socialId = provider + "_" + oauthToken.hashCode();
@@ -93,26 +96,20 @@ public class UserService {
         User user;
         if (existingUser.isPresent()) {
             user = existingUser.get();
-            // Link social account if not already linked
-            if ("google".equals(provider) && user.getGoogleId() == null) {
+            // Link Google account if not already linked
+            if (user.getGoogleId() == null) {
                 user.setGoogleId(socialId);
-            } else if ("facebook".equals(provider) && user.getFacebookId() == null) {
-                user.setFacebookId(socialId);
             }
             user.setUpdatedAt(LocalDateTime.now());
             user = userRepository.save(user);
         } else {
-            // Create new user
+            // Create new user with Google auth
             user = new User();
             user.setEmail(email);
             user.setName(name);
-            user.setRole("FOUNDER"); // Default role for OAuth users
+            user.setRole("FOUNDER");
             user.setEmailVerified(true);
-            if ("google".equals(provider)) {
-                user.setGoogleId(socialId);
-            } else if ("facebook".equals(provider)) {
-                user.setFacebookId(socialId);
-            }
+            user.setGoogleId(socialId);
             user.setCreatedAt(LocalDateTime.now());
             user.setUpdatedAt(LocalDateTime.now());
             user = userRepository.save(user);

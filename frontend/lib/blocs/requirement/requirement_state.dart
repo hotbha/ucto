@@ -16,6 +16,11 @@ class RequirementCreated extends RequirementState {
   RequirementCreated(this.requirement);
 }
 
+class RequirementUpdated extends RequirementState {
+  final Requirement requirement;
+  RequirementUpdated(this.requirement);
+}
+
 class RequirementError extends RequirementState {
   final String message;
   RequirementError(this.message);
