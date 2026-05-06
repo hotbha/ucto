@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api';
+  /// Base URL for the API, sourced from build-time --dart-define.
+  /// Defaults to http://192.168.1.100:8080/api — never localhost.
+  static final String baseUrl = AppConfig.baseUrl;
   static const String _accessTokenKey = 'ucto_access_token';
   static const String _refreshTokenKey = 'ucto_refresh_token';
 

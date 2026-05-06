@@ -8,16 +8,16 @@ services:
     container_name: ucto-postgres
     environment:
       POSTGRES_DB: ucto_db
-      POSTGRES_USER: ucto
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - ucto-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ucto"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -45,14 +45,26 @@ services:
       dockerfile: Dockerfile.backend
     container_name: ucto-backend
     ports:
-      - "8080:8080"
+      - "8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ucto_db
-      SPRING_DATASOURCE_USERNAME: ucto
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      JWT_SECRET: ucto-backend-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
+      DATABASE_URL: jdbc:postgresql://postgres:5432/ucto_db
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      CHARGEBEE_SITE: ${CHARGEBEE_SITE}
+      CHARGEBEE_API_KEY: ${CHARGEBEE_API_KEY}
+      SERVER_HOST: ${SERVER_HOST}
+      SERVER_PORT: ${SERVER_PORT}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,9 +78,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        SERVER_HOST: ${SERVER_HOST}
+        SERVER_PORT: ${SERVER_PORT}
     container_name: ucto-frontend
     ports:
-      - "80:80"
+      - "8081"
     depends_on:
       - backend
     networks:

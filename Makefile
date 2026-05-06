@@ -30,7 +30,9 @@ frontend-analyze:
 	cd frontend && flutter analyze
 
 frontend-build:
-	cd frontend && flutter build web --release
+	cd frontend && flutter build web --release \
+		--dart-define=SERVER_HOST=192.168.1.100 \
+		--dart-define=SERVER_PORT=8080
 
 # Docker
 docker-build:

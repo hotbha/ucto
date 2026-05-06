@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +31,9 @@ public class EmailController {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Value("${app.base-url:http://localhost:8080}")
+    private String appBaseUrl;
+
     // In-memory verification tokens (use Redis in production)
     private static final java.util.Map<String, String> verificationTokens = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Map<String, String> passwordResetTokens = new java.util.concurrent.ConcurrentHashMap<>();
@@ -41,7 +45,7 @@ public class EmailController {
         verificationTokens.put(token, email);
 
         // In production: send via Zoho SMTP
-        System.out.println("Verification email to " + email + ": http://localhost:8080/api/email/verify?token=" + token);
+        System.out.println("Verification email to " + email + ": " + appBaseUrl + "/api/email/verify?token=" + token);
 
         auditLogService.logAuthAction(null, "VERIFICATION_EMAIL_SENT",
                 "Verification email sent to " + email, "", true);
@@ -80,7 +84,7 @@ public class EmailController {
 
         // Flutter web will read the token from the URL and call /api/email/reset-password
         System.out.println("Password reset for " + request.getEmail()
-                + ": http://localhost:3000/reset-password?token=" + token);
+                + ": " + appBaseUrl + "/reset-password?token=" + token);
 
         auditLogService.logAuthAction(userOpt.get().getId(), "PASSWORD_RESET_REQUESTED",
                 "Password reset requested", httpRequest.getRemoteAddr(), true);
