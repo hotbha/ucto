@@ -24,6 +24,19 @@ public class Project {
 
     private String tier; // FREE, STARTUP, GROWTH, ENTERPRISE
 
+    // ── Repository linking fields ──
+    @Column(length = 512)
+    private String repoUrl;
+
+    @Column(length = 20)
+    private String repoProvider; // GITHUB, GITLAB, BITBUCKET, OTHER
+
+    @Column(length = 128)
+    private String repoBranch = "main";
+
+    @Column(length = 256)
+    private String repoTokenRef;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -31,6 +44,7 @@ public class Project {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (repoBranch == null) repoBranch = "main";
     }
 
     @PreUpdate
@@ -56,6 +70,18 @@ public class Project {
 
     public String getTier() { return tier; }
     public void setTier(String tier) { this.tier = tier; }
+
+    public String getRepoUrl() { return repoUrl; }
+    public void setRepoUrl(String repoUrl) { this.repoUrl = repoUrl; }
+
+    public String getRepoProvider() { return repoProvider; }
+    public void setRepoProvider(String repoProvider) { this.repoProvider = repoProvider; }
+
+    public String getRepoBranch() { return repoBranch; }
+    public void setRepoBranch(String repoBranch) { this.repoBranch = repoBranch; }
+
+    public String getRepoTokenRef() { return repoTokenRef; }
+    public void setRepoTokenRef(String repoTokenRef) { this.repoTokenRef = repoTokenRef; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

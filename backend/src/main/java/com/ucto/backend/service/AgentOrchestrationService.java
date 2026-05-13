@@ -87,8 +87,11 @@ public class AgentOrchestrationService {
             case "compliance": return "COMPLIANCE";
             case "ux": return "UI_UX";
             case "architect": return "ARCHITECT";
+            case "pm": return "PM";
+            case "documentation": return "DOCUMENTATION";
             default: return topicType.toUpperCase();
         }
+
     }
 
     public static class AgentRunLimitExceededException extends RuntimeException {

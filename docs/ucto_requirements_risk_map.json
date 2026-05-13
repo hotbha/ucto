@@ -1,0 +1,362 @@
+{
+  "meta": {
+    "title": "UCTO Product Requirements + Risk Map",
+    "version": "1.0",
+    "generatedAt": "2026-05-13",
+    "totalRequirements": 42
+  },
+  "requirements": [
+    {
+      "id": "UCTO-REQ-001",
+      "area": "API",
+      "description": "JWT-based authentication: register, login, refresh, OAuth (Google), OTP password reset",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Security", "Performance", "Reliability"],
+      "openQuestions": ["Rate limiting per IP? Refresh token rotation interval?"]
+    },
+    {
+      "id": "UCTO-REQ-002",
+      "area": "API",
+      "description": "Role-based access control: FOUNDER (full), DEVELOPER (code/view), VIEWER (read-only)",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Security", "Auditability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-003",
+      "area": "API",
+      "description": "Project CRUD: create, read, update, delete projects with member management",
+      "risk": "High",
+      "qualityAttributes": ["Reliability", "Data Integrity"],
+      "openQuestions": ["Soft-delete or hard-delete? Cascading member removal?"]
+    },
+    {
+      "id": "UCTO-REQ-004",
+      "area": "API",
+      "description": "Repo configuration: GET/PUT /api/projects/{id}/repo with repoUrl, repoProvider enum, repoBranch, repoTokenRef",
+      "risk": "High",
+      "qualityAttributes": ["Data Integrity", "Security"],
+      "openQuestions": ["Credential storage — env var only for MVP? HashiCorp Vault in Phase 2?"]
+    },
+    {
+      "id": "UCTO-REQ-005",
+      "area": "API",
+      "description": "Repo config validation: repoUrl must be non-empty when provider is set; provider must be valid enum value",
+      "risk": "High",
+      "qualityAttributes": ["Reliability", "Usability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-006",
+      "area": "API",
+      "description": "Gate status endpoint: GET /api/projects/{id}/branches/{branch}/gate-status returns test/compliance/coordinated gates",
+      "risk": "Medium",
+      "qualityAttributes": ["Observability", "Performance"],
+      "openQuestions": ["Should gate status be cached? TTL?"]
+    },
+    {
+      "id": "UCTO-REQ-007",
+      "area": "API",
+      "description": "Latest test/compliance results: GET .../test-results/latest and .../compliance-results/latest",
+      "risk": "Medium",
+      "qualityAttributes": ["Observability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-008",
+      "area": "API",
+      "description": "Bootstrap project: POST /api/orchestrator/bootstrap creates project from prompt with Spring+React skeleton",
+      "risk": "High",
+      "qualityAttributes": ["Usability", "Reliability"],
+      "openQuestions": ["Should bootstrap trigger real git push or only local generation for MVP?"]
+    },
+    {
+      "id": "UCTO-REQ-009",
+      "area": "API",
+      "description": "Audit logging: append-only log for all user and agent actions with simulation flag",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Auditability", "Compliance", "Data Integrity"],
+      "openQuestions": ["Retention policy? Auto-archive older than 90 days?"]
+    },
+    {
+      "id": "UCTO-REQ-010",
+      "area": "API",
+      "description": "Usage metering: count agent runs per user/month; block at tier limit with 402 error",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Reliability", "Performance", "Observability"],
+      "openQuestions": ["What happens to in-flight agent runs when limit is hit mid-request?"]
+    },
+    {
+      "id": "UCTO-REQ-011",
+      "area": "SimulatedSprintService",
+      "description": "Simulated sprint orchestration: run 5 agents (BA, Architect, Dev, Tester, Compliance) in simulation mode synchronously",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Reliability", "Resilience to LLM issues", "Observability"],
+      "openQuestions": ["Should sprint support async execution with webhook callback in Phase 2?"]
+    },
+    {
+      "id": "UCTO-REQ-012",
+      "area": "SimulatedSprintService",
+      "description": "Sprint input validation: reject empty changeDescription, missing project, unsupported branch",
+      "risk": "High",
+      "qualityAttributes": ["Reliability", "Security"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-013",
+      "area": "SimulatedSprintService",
+      "description": "Sprint defaults branch to 'main' when null/unspecified",
+      "risk": "Low",
+      "qualityAttributes": ["Usability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-014",
+      "area": "SimulatedSprintService",
+      "description": "Sprint persists TestResult and ComplianceResult entities with simulation=true, correlationId, branch",
+      "risk": "High",
+      "qualityAttributes": ["Data Integrity", "Observability"],
+      "openQuestions": ["Should sprint also persist intermediate BA/Architect/Dev outputs for traceability?"]
+    },
+    {
+      "id": "UCTO-REQ-015",
+      "area": "SimulatedSprintService",
+      "description": "Sprint evaluates all three quality gates (test, compliance, coordinated) after agents complete",
+      "risk": "High",
+      "qualityAttributes": ["Reliability", "Observability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-016",
+      "area": "SimulatedSprintService",
+      "description": "Sprint response includes structured BA summary (req count, AC count), Architect summary (components, feasibility, risks), Dev summary (file changes, rationale, risk level)",
+      "risk": "Medium",
+      "qualityAttributes": ["Usability", "Observability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-017",
+      "area": "SimulatedSprintService",
+      "description": "parseOrFallback() handles malformed LLM JSON gracefully: logs warning, returns empty DTO instance, does NOT crash sprint",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Resilience to LLM issues", "Reliability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-018",
+      "area": "DeepSeek Integration",
+      "description": "DeepSeekAgentClient sends correctly formatted chat/completions request with system prompt, user context, model, temperature, max_tokens, and Bearer auth",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Reliability", "Security"],
+      "openQuestions": ["Should we support multiple LLM providers (OpenAI, Anthropic) via strategy pattern?"]
+    },
+    {
+      "id": "UCTO-REQ-019",
+      "area": "DeepSeek Integration",
+      "description": "DeepSeekAgentClient parses response choices[0].message.content into raw string for downstream DTO parsing",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Resilience to LLM issues", "Reliability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-020",
+      "area": "DeepSeek Integration",
+      "description": "DeepSeekAgentClient handles HTTP errors: 429, 500, connection timeout — returns error JSON, no uncaught exception",
+      "risk": "High",
+      "qualityAttributes": ["Resilience to LLM issues", "Reliability"],
+      "openQuestions": ["Should 429 trigger automatic retry with exponential backoff?"]
+    },
+    {
+      "id": "UCTO-REQ-021",
+      "area": "DeepSeek Integration",
+      "description": "DeepSeekAgentClient handles malformed/partial LLM response (missing choices, empty array, non-JSON) — returns raw response as fallback, no NPE",
+      "risk": "High",
+      "qualityAttributes": ["Resilience to LLM issues", "Robustness"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-022",
+      "area": "DeepSeek Integration",
+      "description": "DeepSeekAgentClient unavailable (no API key) returns error JSON without making HTTP call",
+      "risk": "High",
+      "qualityAttributes": ["Reliability", "Observability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-023",
+      "area": "DeepSeek Integration",
+      "description": "Conditional bean wiring: DeepSeekAgentClient active when DEEPSEEK_API_KEY set; StubLLMAgentClient active when key absent",
+      "risk": "Medium",
+      "qualityAttributes": ["Configurability", "Testability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-024",
+      "area": "DeepSeek Integration",
+      "description": "DeepSeek context assembly: user message includes projectTitle, changeDescription, requirements, acceptanceCriteria, architectureSpec as applicable",
+      "risk": "High",
+      "qualityAttributes": ["Reliability", "Usability"],
+      "openQuestions": ["Should context include repo file listing when available?"]
+    },
+    {
+      "id": "UCTO-REQ-025",
+      "area": "Agents / DTO Parsing",
+      "description": "BaRequirementsOutput: parse requirements[] with id, area, description, risk (BusinessCritical/High/Medium/Low), qualityAttributes[], openQuestions[]",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Resilience to LLM issues", "Data Integrity"],
+      "openQuestions": ["Should risk levels map to numeric weights for sprint scoring?"]
+    },
+    {
+      "id": "UCTO-REQ-026",
+      "area": "Agents / DTO Parsing",
+      "description": "ArchitectDesignOutput: parse components[], services[], dataFlows[], feasibility, assumptions, tradeOffs, risks",
+      "risk": "High",
+      "qualityAttributes": ["Resilience to LLM issues"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-027",
+      "area": "Agents / DTO Parsing",
+      "description": "DevImplementOutput: parse filesToChange[] (path, action, summary, riskLevel), rationale, riskLevel, storyId, testCoverage, needsHuman",
+      "risk": "High",
+      "qualityAttributes": ["Resilience to LLM issues"],
+      "openQuestions": ["Should filesToChange include line numbers or code snippets?"]
+    },
+    {
+      "id": "UCTO-REQ-028",
+      "area": "Agents / DTO Parsing",
+      "description": "TesterOutput: parse testsRun, testsPassed, testsFailed, testsSkipped, coveragePercent, overallStatus, doDMet, failures[]",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Resilience to LLM issues", "Data Integrity"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-029",
+      "area": "Agents / DTO Parsing",
+      "description": "ComplianceOutput: parse overallStatus, severity, riskLevel, reportUrl, checksPassed[], checksFailed[], findings[], needsHuman",
+      "risk": "High",
+      "qualityAttributes": ["Resilience to LLM issues", "Compliance"],
+      "openQuestions": ["Should compliance reports link to specific DPDP/GDPR regulation IDs?"]
+    },
+    {
+      "id": "UCTO-REQ-030",
+      "area": "Agents / DTO Parsing",
+      "description": "All DTOs use @JsonIgnoreProperties(ignoreUnknown=true) for tolerance to LLM extra fields",
+      "risk": "High",
+      "qualityAttributes": ["Resilience to LLM issues", "Robustness"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-031",
+      "area": "Agents / DTO Parsing",
+      "description": "StubLLMAgentClient returns valid placeholder JSON for all 5 prompt keys; returns error for unknown keys",
+      "risk": "Medium",
+      "qualityAttributes": ["Testability", "Reliability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-032",
+      "area": "Agents / DTO Parsing",
+      "description": "PromptCatalog loads 5 prompts from agent_prompts.yaml; supports {{variable}} substitution",
+      "risk": "High",
+      "qualityAttributes": ["Configurability", "Reliability"],
+      "openQuestions": ["Should prompts support multi-language (Hindi, Tamil) in Phase 2?"]
+    },
+    {
+      "id": "UCTO-REQ-033",
+      "area": "Persistence",
+      "description": "TestResult entity: projectId, agentRunId, testsRun/Passed/Failed/Skipped, coveragePercent, failuresJson, status, correlationId, branch, simulation, timestamps",
+      "risk": "High",
+      "qualityAttributes": ["Data Integrity", "Observability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-034",
+      "area": "Persistence",
+      "description": "ComplianceResult entity: projectId, agentRunId, checksPassedJson, checksFailedJson, overallStatus, severity, reportUrl, correlationId, branch, simulation",
+      "risk": "High",
+      "qualityAttributes": ["Data Integrity", "Compliance"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-035",
+      "area": "Persistence",
+      "description": "GateEvaluation entity: projectId, gateType (TEST/COMPLIANCE/COORDINATED), passed, testResultId, complianceResultId, correlationId, details, branch, simulation",
+      "risk": "Medium",
+      "qualityAttributes": ["Data Integrity", "Observability"],
+      "openQuestions": ["Should gate evaluations be compressed/aggregated for long history?"]
+    },
+    {
+      "id": "UCTO-REQ-036",
+      "area": "Persistence",
+      "description": "Flyway migration V6: create test_results, compliance_results, gate_evaluations tables; add simulation column to audit_logs",
+      "risk": "High",
+      "qualityAttributes": ["Data Integrity", "Reliability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-037",
+      "area": "Persistence",
+      "description": "RepoWorkspaceService directory structure: {workspace}/{projectId}/{source, plans, patches, logs}",
+      "risk": "Medium",
+      "qualityAttributes": ["Reliability", "Maintainability"],
+      "openQuestions": ["Should workspace dirs be cleaned up after sprint completes? Retention policy?"]
+    },
+    {
+      "id": "UCTO-REQ-038",
+      "area": "Observability",
+      "description": "AuditLog records simulation flag; simulated actions use _SIMULATED suffix (e.g., GATE_TEST_EVALUATE_SIMULATED)",
+      "risk": "High",
+      "qualityAttributes": ["Observability", "Compliance", "Auditability"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-039",
+      "area": "Observability",
+      "description": "Quality & Agents frontend tab: gate status cards (pass/fail chips), simulation indicator (SIM badge), timestamps, latest test/compliance results",
+      "risk": "Medium",
+      "qualityAttributes": ["Usability", "Observability"],
+      "openQuestions": ["Should the tab auto-refresh every N seconds?"]
+    },
+    {
+      "id": "UCTO-REQ-040",
+      "area": "Observability",
+      "description": "Gate status endpoint returns all three gate types + overall pass/fail for a given project+branch",
+      "risk": "Medium",
+      "qualityAttributes": ["Observability", "Performance"],
+      "openQuestions": []
+    },
+    {
+      "id": "UCTO-REQ-041",
+      "area": "Simulation",
+      "description": "Simulation flag propagates from event payload → AgentEventListener → RepoWorkspaceService; skips real git operations, logs _SIMULATED audit entries",
+      "risk": "BusinessCritical",
+      "qualityAttributes": ["Reliability", "Security", "Observability"],
+      "openQuestions": ["Should simulation mode be configurable per-project in the UI?"]
+    },
+    {
+      "id": "UCTO-REQ-042",
+      "area": "Simulation",
+      "description": "Simulation flag defaults to false when absent from event payload",
+      "risk": "High",
+      "qualityAttributes": ["Reliability", "Security"],
+      "openQuestions": []
+    }
+  ],
+  "unclearOrMissingRequirements": [
+    "No requirement for frontend user authentication flow (login screen, token storage, auto-refresh). The Flutter app exists but auth flow requirements are not captured here.",
+    "No requirement for real git push/PR creation — only simulation mode implemented. Real git operations are stubbed/prepared but not wired.",
+    "No requirement for LLM rate limiting / queue management when multiple sprints fire simultaneously.",
+    "No requirement for sprint cancellation mid-execution.",
+    "No requirement for data export / compliance report download.",
+    "No requirement for WebSocket / real-time push of gate status updates to frontend.",
+    "No requirement for multi-tenant isolation guarantees (data separation between projects).",
+    "No requirement for CI/CD pipeline integration (auto-trigger sprint on PR creation)."
+  ],
+  "riskDistribution": {
+    "BusinessCritical": 7,
+    "High": 18,
+    "Medium": 13,
+    "Low": 4
+  }
+}

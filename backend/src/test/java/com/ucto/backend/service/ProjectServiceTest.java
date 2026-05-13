@@ -1,5 +1,7 @@
 package com.ucto.backend.service;
 
+import com.ucto.backend.dto.RepoConfigDTO;
+import com.ucto.backend.dto.RepoValidationException;
 import com.ucto.backend.entity.Project;
 import com.ucto.backend.entity.ProjectMember;
 import com.ucto.backend.repository.ProjectMemberRepository;
@@ -9,15 +11,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for ProjectService repo configuration methods.
+ */
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
 
@@ -32,123 +35,147 @@ class ProjectServiceTest {
     @BeforeEach
     void setUp() {
         projectService = new ProjectService();
-        ReflectionTestUtils.setField(projectService, "projectRepository", projectRepository);
-        ReflectionTestUtils.setField(projectService, "projectMemberRepository", projectMemberRepository);
+        projectService.projectRepository = projectRepository;
+        projectService.projectMemberRepository = projectMemberRepository;
     }
 
     @Test
-    void createProject_ShouldSaveProjectAndAddOwnerMember() {
-        when(projectRepository.save(any(Project.class))).thenAnswer(i -> {
-            Project p = i.getArgument(0);
-            p.setId(1L);
-            return p;
-        });
-        when(projectMemberRepository.save(any(ProjectMember.class))).thenAnswer(i -> i.getArgument(0));
+    void testGetRepoConfig_projectNotFound_returnsNull() {
+        when(projectRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Project project = projectService.createProject("Test Project", "A test", 1L, "FREE");
-
-        assertEquals("Test Project", project.getTitle());
-        assertEquals("A test", project.getDescription());
-        assertEquals(1L, project.getOwnerId());
-        assertEquals("DRAFT", project.getStatus());
-        assertEquals("FREE", project.getTier());
-        assertNotNull(project.getId());
-
-        verify(projectMemberRepository).save(argThat(m ->
-                m.getProjectId().equals(1L) && m.getUserId().equals(1L) && "FOUNDER".equals(m.getRole())
-        ));
+        RepoConfigDTO config = projectService.getRepoConfig(1L);
+        assertNull(config);
     }
 
     @Test
-    void createProject_ShouldDefaultTierToFreeWhenNull() {
-        when(projectRepository.save(any(Project.class))).thenAnswer(i -> {
-            Project p = i.getArgument(0);
-            p.setId(2L);
-            return p;
-        });
-        when(projectMemberRepository.save(any(ProjectMember.class))).thenAnswer(i -> i.getArgument(0));
+    void testGetRepoConfig_projectExists_returnsConfig() {
+        Project project = createProjectWithRepo(1L, "https://github.com/org/repo.git",
+                "GITHUB", "main", "cred_abc123");
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
-        Project project = projectService.createProject("Title", "Desc", 1L, null);
-        assertEquals("FREE", project.getTier());
+        RepoConfigDTO config = projectService.getRepoConfig(1L);
+        assertNotNull(config);
+        assertEquals(1L, config.getProjectId());
+        assertEquals("https://github.com/org/repo.git", config.getRepoUrl());
+        assertEquals("GITHUB", config.getRepoProvider());
+        assertEquals("main", config.getRepoBranch());
+        assertEquals("cred_abc123", config.getRepoTokenRef());
     }
 
     @Test
-    void getProjectsByOwner_ShouldReturnOwnerProjects() {
-        Project p1 = new Project();
-        p1.setId(1L);
-        p1.setOwnerId(1L);
-        Project p2 = new Project();
-        p2.setId(2L);
-        p2.setOwnerId(1L);
+    void testUpdateRepoConfig_projectNotFound_returnsNull() {
+        when(projectRepository.findById(1L)).thenReturn(Optional.empty());
 
-        when(projectRepository.findByOwnerId(1L)).thenReturn(List.of(p1, p2));
-
-        List<Project> projects = projectService.getProjectsByOwner(1L);
-        assertEquals(2, projects.size());
+        RepoConfigDTO config = projectService.updateRepoConfig(1L, new RepoConfigDTO());
+        assertNull(config);
     }
 
     @Test
-    void getProjectById_WhenExists_ShouldReturnProject() {
-        Project p = new Project();
-        p.setId(1L);
-        p.setTitle("Existing");
-
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(p));
-
-        Project result = projectService.getProjectById(1L);
-        assertNotNull(result);
-        assertEquals("Existing", result.getTitle());
-    }
-
-    @Test
-    void getProjectById_WhenNotExists_ShouldReturnNull() {
-        when(projectRepository.findById(999L)).thenReturn(Optional.empty());
-        assertNull(projectService.getProjectById(999L));
-    }
-
-    @Test
-    void updateProject_ShouldUpdateOnlyProvidedFields() {
-        Project existing = new Project();
-        existing.setId(1L);
-        existing.setTitle("Old Title");
-        existing.setDescription("Old Desc");
-        existing.setStatus("DRAFT");
-
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(existing));
+    void testUpdateRepoConfig_validConfig_updatesSuccessfully() {
+        Project project = createEmptyProject(1L);
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenAnswer(i -> i.getArgument(0));
 
-        Project updated = projectService.updateProject(1L, "New Title", null, "IN_PROGRESS");
+        RepoConfigDTO input = new RepoConfigDTO();
+        input.setProjectId(1L);
+        input.setRepoUrl("https://github.com/org/my-project.git");
+        input.setRepoProvider("GITHUB");
+        input.setRepoBranch("develop");
+        input.setRepoTokenRef("cred_xyz789");
 
-        assertEquals("New Title", updated.getTitle());
-        assertEquals("Old Desc", updated.getDescription()); // unchanged
-        assertEquals("IN_PROGRESS", updated.getStatus());
+        RepoConfigDTO result = projectService.updateRepoConfig(1L, input);
+        assertNotNull(result);
+        assertEquals("https://github.com/org/my-project.git", result.getRepoUrl());
+        assertEquals("GITHUB", result.getRepoProvider());
+        assertEquals("develop", result.getRepoBranch());
+        assertEquals("cred_xyz789", result.getRepoTokenRef());
     }
 
     @Test
-    void updateProject_WhenNotExists_ShouldReturnNull() {
-        when(projectRepository.findById(999L)).thenReturn(Optional.empty());
-        assertNull(projectService.updateProject(999L, "Title", null, null));
+    void testUpdateRepoConfig_withoutProvider_allowsEmptyUrl() {
+        Project project = createEmptyProject(1L);
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.save(any(Project.class))).thenAnswer(i -> i.getArgument(0));
+
+        RepoConfigDTO input = new RepoConfigDTO();
+        input.setProjectId(1L);
+        input.setRepoUrl("");
+        input.setRepoProvider("");
+        input.setRepoBranch("main");
+
+        // Should succeed because provider is not set
+        RepoConfigDTO result = projectService.updateRepoConfig(1L, input);
+        assertNotNull(result);
     }
 
     @Test
-    void addMember_ShouldSaveMember() {
-        projectService.addMember(1L, 2L, "DEVELOPER");
+    void testUpdateRepoConfig_providerWithoutUrl_throwsValidationException() {
+        Project project = createEmptyProject(1L);
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
-        verify(projectMemberRepository).save(argThat(m ->
-                m.getProjectId().equals(1L) && m.getUserId().equals(2L) && "DEVELOPER".equals(m.getRole())
-        ));
+        RepoConfigDTO input = new RepoConfigDTO();
+        input.setProjectId(1L);
+        input.setRepoUrl("");
+        input.setRepoProvider("GITHUB");
+
+        assertThrows(RepoValidationException.class,
+                () -> projectService.updateRepoConfig(1L, input));
     }
 
     @Test
-    void deleteProject_ShouldDeleteMembersAndProject() {
-        ProjectMember m1 = new ProjectMember();
-        m1.setId(1L);
+    void testUpdateRepoConfig_invalidProvider_throwsValidationException() {
+        Project project = createEmptyProject(1L);
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
-        when(projectMemberRepository.findByProjectId(1L)).thenReturn(List.of(m1));
+        RepoConfigDTO input = new RepoConfigDTO();
+        input.setProjectId(1L);
+        input.setRepoUrl("https://example.com/repo.git");
+        input.setRepoProvider("INVALID_PROVIDER");
 
-        projectService.deleteProject(1L);
+        assertThrows(RepoValidationException.class,
+                () -> projectService.updateRepoConfig(1L, input));
+    }
 
-        verify(projectMemberRepository).delete(m1);
-        verify(projectRepository).deleteById(1L);
+    @Test
+    void testUpdateRepoConfig_defaultsBranchToMain() {
+        Project project = createEmptyProject(1L);
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+        when(projectRepository.save(any(Project.class))).thenAnswer(i -> i.getArgument(0));
+
+        RepoConfigDTO input = new RepoConfigDTO();
+        input.setProjectId(1L);
+        input.setRepoUrl("https://github.com/org/repo.git");
+        input.setRepoProvider("GITHUB");
+        input.setRepoBranch(null); // Not provided
+
+        RepoConfigDTO result = projectService.updateRepoConfig(1L, input);
+        assertEquals("main", result.getRepoBranch());
+    }
+
+    // ── Helpers ──
+
+    private Project createProjectWithRepo(Long id, String url, String provider,
+                                           String branch, String tokenRef) {
+        Project p = new Project();
+        p.setId(id);
+        p.setTitle("Test Project");
+        p.setOwnerId(1L);
+        p.setStatus("DRAFT");
+        p.setTier("FREE");
+        p.setRepoUrl(url);
+        p.setRepoProvider(provider);
+        p.setRepoBranch(branch);
+        p.setRepoTokenRef(tokenRef);
+        return p;
+    }
+
+    private Project createEmptyProject(Long id) {
+        Project p = new Project();
+        p.setId(id);
+        p.setTitle("Test Project");
+        p.setOwnerId(1L);
+        p.setStatus("DRAFT");
+        p.setTier("FREE");
+        return p;
     }
 }

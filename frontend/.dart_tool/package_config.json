@@ -27,7 +27,7 @@
     },
     {
       "name": "bloc",
-      "rootUri": "file:///C:/Users/BHARA/AppData/Local/Pub/Cache/hosted/pub.dev/bloc-9.2.0",
+      "rootUri": "file:///C:/Users/BHARA/AppData/Local/Pub/Cache/hosted/pub.dev/bloc-9.2.1",
       "packageUri": "lib/",
       "languageVersion": "2.14"
     },
@@ -603,7 +603,7 @@
     },
     {
       "name": "url_launcher_web",
-      "rootUri": "file:///C:/Users/BHARA/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher_web-2.4.2",
+      "rootUri": "file:///C:/Users/BHARA/AppData/Local/Pub/Cache/hosted/pub.dev/url_launcher_web-2.4.3",
       "packageUri": "lib/",
       "languageVersion": "3.10"
     },

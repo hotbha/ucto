@@ -17,9 +17,11 @@ All documents are in .md format for developer‑friendly workflows, CI/CD integr
 
 ## Core Architecture
 - **Flutter BLoC pattern**: Separate `blocs/`, `models/`, `ui/` layers
-- **Spring Boot REST API**: Authentication, requirements, audit logs, compliance
-- **6 AI Agents**: Business Analyst, Developer, Tester, Compliance, UI/UX Expert, Solutions Architect
-- **Agent Communication**: Redis Pub/Sub for MVP; RabbitMQ planned for Phase 2
+- **Spring Boot REST API**: Authentication, requirements, audit logs, compliance, orchestrator, PM, docs
+- **8 AI Agents**: Business Analyst (BA), Project Manager/Scrum Master, Developer, Tester/QA, Compliance/Governance, UI/UX, Solution Architect, Documentation Agent
+- **Agent Communication**: Standardized message structure with `needs_human` routing (see [message_structure.md](message_structure.md))
+- **Message Broker**: Redis Pub/Sub for MVP; RabbitMQ planned for Phase 2
+- **Closed-Loop Workflows**: 4 concurrent loops (Discovery, Build, Risk, UX/Doc) instead of linear sprint pipeline
 
 ## Documentation Index
 

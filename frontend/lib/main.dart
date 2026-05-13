@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ucto_frontend/ui/screens/ba_chat_screen.dart';
 import 'package:ucto_frontend/ui/screens/dashboard_screen.dart';
 import 'package:ucto_frontend/ui/screens/login_screen.dart';
 import 'package:ucto_frontend/ui/screens/register_screen.dart';
@@ -12,6 +13,7 @@ import 'package:ucto_frontend/ui/screens/forgot_password_screen.dart';
 import 'package:ucto_frontend/ui/screens/reset_password_screen.dart';
 import 'package:ucto_frontend/ui/screens/verify_email_screen.dart';
 import 'blocs/auth/auth_bloc.dart';
+import 'blocs/ba_chat/ba_chat_bloc.dart';
 import 'blocs/project/project_bloc.dart';
 import 'blocs/subscription/subscription_bloc.dart';
 import 'blocs/requirement/requirement_bloc.dart';
@@ -44,6 +46,8 @@ class UctoApp extends StatelessWidget {
               create: (ctx) => RequirementBloc(ctx.read<ApiService>())),
           BlocProvider(
               create: (ctx) => ScreenBloc(ctx.read<ApiService>())),
+          BlocProvider(
+              create: (ctx) => BAChatBloc(ctx.read<ApiService>())),
         ],
         child: MaterialApp(
           title: 'UCTO',
@@ -84,6 +88,18 @@ class UctoApp extends StatelessWidget {
                 builder: (ctx) => ResetPasswordScreen(token: token),
                 settings: settings,
               );
+            }
+            // Handle /ba-chat/:projectId route
+            if (settings.name != null && settings.name!.startsWith('/ba-chat/')) {
+              final parts = settings.name!.split('/');
+              final id = int.tryParse(parts[2]);
+              final title = parts.length > 3 ? Uri.decodeComponent(parts[3]) : 'Project';
+              if (id != null) {
+                return MaterialPageRoute(
+                  builder: (ctx) => BAChatScreen(projectId: id, projectTitle: title),
+                  settings: settings,
+                );
+              }
             }
             // Named routes
             final routes = <String, WidgetBuilder>{

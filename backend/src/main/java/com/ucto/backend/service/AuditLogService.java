@@ -15,6 +15,11 @@ public class AuditLogService {
 
     public AuditLog log(Long userId, Long projectId, String action, String details,
                         String ipAddress, boolean success) {
+        return log(userId, projectId, action, details, ipAddress, success, false);
+    }
+
+    public AuditLog log(Long userId, Long projectId, String action, String details,
+                        String ipAddress, boolean success, boolean simulation) {
         AuditLog log = new AuditLog();
         log.setUserId(userId);
         log.setProjectId(projectId);
@@ -22,8 +27,10 @@ public class AuditLogService {
         log.setDetails(details);
         log.setIpAddress(ipAddress);
         log.setSuccess(success);
+        log.setSimulation(simulation);
         return auditLogRepository.save(log);
     }
+
 
     public AuditLog logAuthAction(Long userId, String action, String details,
                                   String ipAddress, boolean success) {

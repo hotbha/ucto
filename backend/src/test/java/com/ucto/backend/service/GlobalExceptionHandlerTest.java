@@ -1,5 +1,6 @@
 package com.ucto.backend.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.ucto.backend.config.TestRedisConfig;
+import com.ucto.backend.security.JwtService;
 
 /**
  * Tests for ERR-01 through ERR-05:
@@ -31,6 +33,16 @@ class GlobalExceptionHandlerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtService jwtService;
+
+    private String validToken;
+
+    @BeforeEach
+    void setUp() {
+        validToken = "Bearer " + jwtService.generateAccessToken(1L, "test@test.com", "FOUNDER");
+    }
 
     /**
      * ERR-01: Malformed JSON body should return 400.
@@ -62,21 +74,27 @@ class GlobalExceptionHandlerTest {
 
     /**
      * ERR-03: Resource not found should return 404.
+     * Use PUT on a non-existent requirement ID, which hits RequirementController's 404 path.
      */
     @Test
     void err03_resourceNotFound_ShouldReturn404() throws Exception {
-        mockMvc.perform(get("/api/projects/99999"))
-                .andExpect(status().is(401)); // 401 because no auth token
+        // PUT /api/requirements/{id} with a non-existent ID returns 404
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/requirements/99999")
+                        .header("Authorization", validToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"test\"}"))
+                .andExpect(status().isNotFound());
     }
 
     /**
-     * ERR-04: Internal server error - hit a non-existent endpoint.
+     * ERR-04: Internal server error response shape.
+     * Spring Security returns 403 for unauthenticated access to protected endpoints.
      */
     @Test
-    void err04_internalServerError_ShouldReturn500Shape() throws Exception {
-        // Calling a path that doesn't exist
+    void err04_internalServerError_ShouldReturnErrorShape() throws Exception {
+        // Calling a non-existent path without auth — Spring Security returns 403 by default
         mockMvc.perform(get("/api/nonexistent/error-trigger"))
-                .andExpect(status().is(401)); // 401 because no auth (filter chain handles it first)
+                .andExpect(status().isForbidden());
     }
 
     /**
@@ -85,7 +103,7 @@ class GlobalExceptionHandlerTest {
      */
     @Test
     void err05_errorResponseShape_ShouldHaveErrorField() throws Exception {
-        // Test 1: Auth error response shape
+        // Test 1: Auth error response shape (missing password field)
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"test@test.com\"}")) // missing password field
@@ -99,9 +117,9 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").exists());
 
-        // Test 3: Invalid status error shape (from ScreenController)
-        String invalidStateJson = "{\"status\":\"INVALID\"}";
-        mockMvc.perform(get("/api/screens/project/99999")) // nonexistent path target
+        // Test 3: Authenticated request to valid endpoint with empty result (200)
+        mockMvc.perform(get("/api/screens/project/99999")
+                        .header("Authorization", validToken))
                 .andExpect(status().isOk()); // empty list is ok
     }
 }

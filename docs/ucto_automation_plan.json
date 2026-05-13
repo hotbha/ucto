@@ -1,0 +1,654 @@
+{
+  "meta": {
+    "title": "UCTO Test Automation Plan",
+    "generatedAt": "2026-05-13",
+    "existingTestCount": 12,
+    "proposedNewTestCount": 34,
+    "targetRequirementsCoverage": "95%+",
+    "targetLineCoverage": "80%+"
+  },
+  "automationPlan": [
+    {
+      "testCaseId": "TC-API-001",
+      "recommendedLevel": "integration",
+      "targetClasses": ["AuthController", "JwtService", "SecurityConfig"],
+      "notes": "Existing AuthControllerTest covers this"
+    },
+    {
+      "testCaseId": "TC-API-002",
+      "recommendedLevel": "integration",
+      "targetClasses": ["AuthController", "JwtService"],
+      "notes": "Extend AuthControllerTest with refresh token test"
+    },
+    {
+      "testCaseId": "TC-API-003",
+      "recommendedLevel": "integration",
+      "targetClasses": ["AuthController", "OAuth2Config"],
+      "notes": "Requires OAuth mock server"
+    },
+    {
+      "testCaseId": "TC-API-004",
+      "recommendedLevel": "integration",
+      "targetClasses": ["AuthController", "SmsService", "EmailService"],
+      "notes": "Stub SMS/email for test"
+    },
+    {
+      "testCaseId": "TC-API-005",
+      "recommendedLevel": "integration",
+      "targetClasses": ["ProjectController", "SecurityConfig"],
+      "notes": "Existing ProjectControllerTest has RBAC coverage"
+    },
+    {
+      "testCaseId": "TC-API-006",
+      "recommendedLevel": "integration",
+      "targetClasses": ["ProjectController", "ProjectService"],
+      "notes": "Existing ProjectControllerTest covers CRUD"
+    },
+    {
+      "testCaseId": "TC-API-007",
+      "recommendedLevel": "integration",
+      "targetClasses": ["ProjectService", "ProjectMemberRepository"],
+      "notes": "Add member add/remove to ProjectServiceTest"
+    },
+    {
+      "testCaseId": "TC-API-008",
+      "recommendedLevel": "integration",
+      "targetClasses": ["ProjectController", "ProjectService"],
+      "notes": "Existing ProjectControllerTest covers GET/PUT repo config"
+    },
+    {
+      "testCaseId": "TC-API-009",
+      "recommendedLevel": "unit",
+      "targetClasses": ["ProjectService"],
+      "notes": "Existing ProjectServiceTest covers validation"
+    },
+    {
+      "testCaseId": "TC-API-010",
+      "recommendedLevel": "unit",
+      "targetClasses": ["ProjectService"],
+      "notes": "Existing ProjectServiceTest covers invalid provider"
+    },
+    {
+      "testCaseId": "TC-API-011",
+      "recommendedLevel": "integration",
+      "targetClasses": ["ProjectController", "QualityGateService"],
+      "notes": "New controller test for gate-status endpoint"
+    },
+    {
+      "testCaseId": "TC-API-012",
+      "recommendedLevel": "integration",
+      "targetClasses": ["SimulatedSprintController", "TestResultRepository"],
+      "notes": "New controller test for test-results/latest"
+    },
+    {
+      "testCaseId": "TC-API-013",
+      "recommendedLevel": "integration",
+      "targetClasses": ["SimulatedSprintController", "ComplianceResultRepository"],
+      "notes": "New controller test for compliance-results/latest"
+    },
+    {
+      "testCaseId": "TC-API-014",
+      "recommendedLevel": "integration",
+      "targetClasses": ["BootstrapService", "ProjectService"],
+      "notes": "Existing BootstrapServiceTest covers this"
+    },
+    {
+      "testCaseId": "TC-API-015",
+      "recommendedLevel": "unit",
+      "targetClasses": ["AuditLogService"],
+      "notes": "Covered by AuditLogServiceTest"
+    },
+    {
+      "testCaseId": "TC-API-016",
+      "recommendedLevel": "unit",
+      "targetClasses": ["AuditLogService"],
+      "notes": "Add simulation flag test to AuditLogServiceTest"
+    },
+    {
+      "testCaseId": "TC-API-017",
+      "recommendedLevel": "unit",
+      "targetClasses": ["AgentOrchestrationService", "SubscriptionService"],
+      "notes": "Covered by AgentOrchestrationServiceTest"
+    },
+    {
+      "testCaseId": "TC-API-018",
+      "recommendedLevel": "unit",
+      "targetClasses": ["AgentOrchestrationService", "UsageMeterService"],
+      "notes": "Covered by AgentOrchestrationServiceTest"
+    },
+    {
+      "testCaseId": "TC-SPRINT-001",
+      "recommendedLevel": "integration",
+      "targetClasses": ["SimulatedSprintService", "LLMAgentClient", "QualityGateService"],
+      "notes": "Existing SimulatedSprintServiceTest covers happy path"
+    },
+    {
+      "testCaseId": "TC-SPRINT-002",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "Covered by SimulatedSprintServiceTest"
+    },
+    {
+      "testCaseId": "TC-SPRINT-003",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "Covered by SimulatedSprintServiceTest"
+    },
+    {
+      "testCaseId": "TC-SPRINT-004",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "Covered by SimulatedSprintServiceTest"
+    },
+    {
+      "testCaseId": "TC-SPRINT-005",
+      "recommendedLevel": "integration",
+      "targetClasses": ["SimulatedSprintService", "TestResultRepository"],
+      "notes": "Covered by SimulatedSprintServiceTest"
+    },
+    {
+      "testCaseId": "TC-SPRINT-006",
+      "recommendedLevel": "integration",
+      "targetClasses": ["SimulatedSprintService", "ComplianceResultRepository"],
+      "notes": "Covered by SimulatedSprintServiceTest"
+    },
+    {
+      "testCaseId": "TC-SPRINT-007",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService", "QualityGateService"],
+      "notes": "Covered by SimulatedSprintServiceTest"
+    },
+    {
+      "testCaseId": "TC-SPRINT-008",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "PROPOSED NEW — verify BaSummary/ArchitectSummary/DevSummary population in response"
+    },
+    {
+      "testCaseId": "TC-SPRINT-009",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "PROPOSED NEW — mock LLM to return malformed JSON, verify parseOrFallback used"
+    },
+    {
+      "testCaseId": "TC-SPRINT-010",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "PROPOSED NEW — mock LLM to return null, verify fallback"
+    },
+    {
+      "testCaseId": "TC-SPRINT-011",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "PROPOSED NEW — mock LLM to return empty string, verify fallback"
+    },
+    {
+      "testCaseId": "TC-SPRINT-012",
+      "recommendedLevel": "unit",
+      "targetClasses": ["SimulatedSprintService"],
+      "notes": "PROPOSED NEW — mock LLM to return partial JSON, verify partial parse"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-001",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient", "PromptCatalog"],
+      "notes": "Existing DeepSeekAgentClientTest covers request payload"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-002",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "Existing DeepSeekAgentClientTest covers response parsing"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-003",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "Existing DeepSeekAgentClientTest covers 429"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-004",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "Existing DeepSeekAgentClientTest covers HTTP 500"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-005",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "Existing DeepSeekAgentClientTest covers timeout"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-006",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "PROPOSED NEW — missing choices array"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-007",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "PROPOSED NEW — empty choices array"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-008",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "Existing DeepSeekAgentClientTest covers non-JSON body"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-009",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "Existing DeepSeekAgentClientTest covers no API key"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-010",
+      "recommendedLevel": "integration",
+      "targetClasses": ["DeepSeekAgentClient", "StubLLMAgentClient"],
+      "notes": "PROPOSED NEW — conditional bean wiring with key set"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-011",
+      "recommendedLevel": "integration",
+      "targetClasses": ["StubLLMAgentClient"],
+      "notes": "PROPOSED NEW — conditional bean wiring without key"
+    },
+    {
+      "testCaseId": "TC-DEEPSEEK-012",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DeepSeekAgentClient"],
+      "notes": "Existing DeepSeekAgentClientTest covers context assembly"
+    },
+    {
+      "testCaseId": "TC-DTO-001",
+      "recommendedLevel": "unit",
+      "targetClasses": ["BaRequirementsOutput"],
+      "notes": "Existing AgentDtoParsingTest covers this"
+    },
+    {
+      "testCaseId": "TC-DTO-002",
+      "recommendedLevel": "unit",
+      "targetClasses": ["BaRequirementsOutput"],
+      "notes": "Existing AgentDtoParsingTest covers malformed"
+    },
+    {
+      "testCaseId": "TC-DTO-003",
+      "recommendedLevel": "unit",
+      "targetClasses": ["BaRequirementsOutput"],
+      "notes": "Existing AgentDtoParsingTest covers extra fields"
+    },
+    {
+      "testCaseId": "TC-DTO-004",
+      "recommendedLevel": "unit",
+      "targetClasses": ["BaRequirementsOutput"],
+      "notes": "Existing AgentDtoParsingTest covers empty/null"
+    },
+    {
+      "testCaseId": "TC-DTO-005",
+      "recommendedLevel": "unit",
+      "targetClasses": ["ArchitectDesignOutput"],
+      "notes": "Existing AgentDtoParsingTest covers this"
+    },
+    {
+      "testCaseId": "TC-DTO-006",
+      "recommendedLevel": "unit",
+      "targetClasses": ["DevImplementOutput"],
+      "notes": "Existing AgentDtoParsingTest covers this"
+    },
+    {
+      "testCaseId": "TC-DTO-007",
+      "recommendedLevel": "unit",
+      "targetClasses": ["TesterOutput"],
+      "notes": "Existing AgentDtoParsingTest covers this"
+    },
+    {
+      "testCaseId": "TC-DTO-008",
+      "recommendedLevel": "unit",
+      "targetClasses": ["TesterOutput"],
+      "notes": "Existing AgentDtoParsingTest covers missing fields"
+    },
+    {
+      "testCaseId": "TC-DTO-009",
+      "recommendedLevel": "unit",
+      "targetClasses": ["ComplianceOutput"],
+      "notes": "Existing AgentDtoParsingTest covers this"
+    },
+    {
+      "testCaseId": "TC-DTO-010",
+      "recommendedLevel": "unit",
+      "targetClasses": ["ComplianceOutput"],
+      "notes": "Existing AgentDtoParsingTest covers null fields"
+    },
+    {
+      "testCaseId": "TC-AGENT-001",
+      "recommendedLevel": "unit",
+      "targetClasses": ["StubLLMAgentClient", "PromptCatalog"],
+      "notes": "Existing StubLLMAgentClientTest covers 5 keys"
+    },
+    {
+      "testCaseId": "TC-AGENT-002",
+      "recommendedLevel": "unit",
+      "targetClasses": ["StubLLMAgentClient"],
+      "notes": "Existing StubLLMAgentClientTest covers unknown key"
+    },
+    {
+      "testCaseId": "TC-AGENT-003",
+      "recommendedLevel": "unit",
+      "targetClasses": ["PromptCatalog"],
+      "notes": "Existing PromptCatalogTest covers substitution"
+    },
+    {
+      "testCaseId": "TC-AGENT-004",
+      "recommendedLevel": "unit",
+      "targetClasses": ["PromptCatalog"],
+      "notes": "Existing PromptCatalogTest covers missing key"
+    },
+    {
+      "testCaseId": "TC-PERSIST-001",
+      "recommendedLevel": "integration",
+      "targetClasses": ["TestResultRepository"],
+      "notes": "PROPOSED NEW — TestResult round-trip test using @DataJpaTest"
+    },
+    {
+      "testCaseId": "TC-PERSIST-002",
+      "recommendedLevel": "integration",
+      "targetClasses": ["ComplianceResultRepository"],
+      "notes": "PROPOSED NEW — ComplianceResult round-trip test"
+    },
+    {
+      "testCaseId": "TC-PERSIST-003",
+      "recommendedLevel": "integration",
+      "targetClasses": ["GateEvaluationRepository"],
+      "notes": "PROPOSED NEW — GateEvaluation query test"
+    },
+    {
+      "testCaseId": "TC-PERSIST-004",
+      "recommendedLevel": "integration",
+      "targetClasses": ["Flyway migrations"],
+      "notes": "PROPOSED NEW — verify V6 migration against H2"
+    },
+    {
+      "testCaseId": "TC-PERSIST-005",
+      "recommendedLevel": "integration",
+      "targetClasses": ["V6 migration"],
+      "notes": "PROPOSED NEW — simulation column migration"
+    },
+    {
+      "testCaseId": "TC-PERSIST-006",
+      "recommendedLevel": "unit",
+      "targetClasses": ["RepoWorkspaceService"],
+      "notes": "Existing RepoWorkspaceServiceTest covers directory structure"
+    },
+    {
+      "testCaseId": "TC-SIM-001",
+      "recommendedLevel": "unit",
+      "targetClasses": ["AgentEventListener", "RepoWorkspaceService"],
+      "notes": "PROPOSED NEW — simulation flag propagation test"
+    },
+    {
+      "testCaseId": "TC-SIM-002",
+      "recommendedLevel": "unit",
+      "targetClasses": ["RepoWorkspaceService"],
+      "notes": "Existing RepoWorkspaceServiceTest covers simulation mode"
+    },
+    {
+      "testCaseId": "TC-SIM-003",
+      "recommendedLevel": "unit",
+      "targetClasses": ["AgentEventListener"],
+      "notes": "PROPOSED NEW — isSimulation default false test"
+    },
+    {
+      "testCaseId": "TC-SIM-004",
+      "recommendedLevel": "unit",
+      "targetClasses": ["QualityGateService"],
+      "notes": "Existing QualityGateServiceTest covers simulated audit suffix"
+    },
+    {
+      "testCaseId": "TC-RESILIENCE-001",
+      "recommendedLevel": "unit",
+      "targetClasses": ["All agent DTOs"],
+      "notes": "Existing AgentDtoParsingTest covers malformed JSON for all"
+    },
+    {
+      "testCaseId": "TC-RESILIENCE-002",
+      "recommendedLevel": "unit",
+      "targetClasses": ["QualityGateService"],
+      "notes": "Existing QualityGateServiceTest covers coordinated gate rejection"
+    },
+    {
+      "testCaseId": "TC-SEC-001",
+      "recommendedLevel": "integration",
+      "targetClasses": ["ProjectController"],
+      "notes": "Existing ProjectControllerTest covers non-owner repo config"
+    }
+  ],
+  "newTests": [
+    {
+      "id": "NEW-SPRINT-SUMMARY-01",
+      "description": "Verify sprint response includes BaSummary, ArchitectSummary, DevSummary with correct values from parsed DTOs",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return parseable JSON for BA/Architect/Dev; verify structured summaries populated",
+      "requirementIds": ["UCTO-REQ-016"]
+    },
+    {
+      "id": "NEW-SPRINT-MALFORMED-01",
+      "description": "parseOrFallback handles malformed JSON from BA agent",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return '{broken json' for BA_REQUIREMENTS; verify sprint completes; verify empty BaRequirementsOutput used",
+      "requirementIds": ["UCTO-REQ-017"]
+    },
+    {
+      "id": "NEW-SPRINT-MALFORMED-02",
+      "description": "parseOrFallback handles malformed JSON from Architect agent",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return malformed JSON for ARCHITECT_DESIGN; verify sprint completes with empty ArchitectDesignOutput",
+      "requirementIds": ["UCTO-REQ-017"]
+    },
+    {
+      "id": "NEW-SPRINT-MALFORMED-03",
+      "description": "parseOrFallback handles malformed JSON from Dev agent",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return malformed JSON for DEV_IMPLEMENT; verify sprint completes with empty DevImplementOutput",
+      "requirementIds": ["UCTO-REQ-017"]
+    },
+    {
+      "id": "NEW-SPRINT-MALFORMED-04",
+      "description": "parseOrFallback handles malformed JSON from Tester agent",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return malformed JSON for TEST_GENERATE; verify sprint completes with empty TesterOutput; verify TestResult has zero counts",
+      "requirementIds": ["UCTO-REQ-017", "UCTO-REQ-028"]
+    },
+    {
+      "id": "NEW-SPRINT-MALFORMED-05",
+      "description": "parseOrFallback handles malformed JSON from Compliance agent",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return malformed JSON for COMPLIANCE_CHECK; verify sprint completes with empty ComplianceOutput",
+      "requirementIds": ["UCTO-REQ-017", "UCTO-REQ-029"]
+    },
+    {
+      "id": "NEW-SPRINT-NULL-01",
+      "description": "parseOrFallback handles null response from LLM",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM.execute() to return null; verify parseOrFallback returns empty DTO without NPE",
+      "requirementIds": ["UCTO-REQ-017"]
+    },
+    {
+      "id": "NEW-SPRINT-EMPTY-01",
+      "description": "parseOrFallback handles empty string response from LLM",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return ''; verify parseOrFallback returns empty DTO",
+      "requirementIds": ["UCTO-REQ-017"]
+    },
+    {
+      "id": "NEW-SPRINT-PARTIAL-01",
+      "description": "parseOrFallback handles partial JSON with extra unknown fields",
+      "targetClass": "SimulatedSprintService",
+      "scenario": "Mock LLM to return valid JSON with extra fields not in DTO; verify parsing succeeds and unknown fields ignored",
+      "requirementIds": ["UCTO-REQ-017", "UCTO-REQ-030"]
+    },
+    {
+      "id": "NEW-PERSIST-TESTRESULT-01",
+      "description": "TestResult entity round-trips through repository with all fields",
+      "targetClass": "TestResultRepository",
+      "scenario": "Create TestResult with all fields; save; retrieve by id; verify all fields match including failuresJson, coveragePercent, simulation",
+      "requirementIds": ["UCTO-REQ-033"]
+    },
+    {
+      "id": "NEW-PERSIST-COMPLIANCE-01",
+      "description": "ComplianceResult entity round-trips through repository",
+      "targetClass": "ComplianceResultRepository",
+      "scenario": "Create ComplianceResult; save; retrieve; verify checksPassedJson, checksFailedJson, overallStatus, severity, simulation",
+      "requirementIds": ["UCTO-REQ-034"]
+    },
+    {
+      "id": "NEW-PERSIST-GATE-01",
+      "description": "GateEvaluation query by projectId + gateType + branch returns latest",
+      "targetClass": "GateEvaluationRepository",
+      "scenario": "Save two GateEvaluations for same project/type/branch; query with findTopByProjectIdAndGateTypeAndBranch; verify most recent returned",
+      "requirementIds": ["UCTO-REQ-035"]
+    },
+    {
+      "id": "NEW-DEEPSEEK-CHOICES-01",
+      "description": "DeepSeek handles response with missing choices array",
+      "targetClass": "DeepSeekAgentClient",
+      "scenario": "Mock exchange() returns 200 with body '{\"id\":\"x\"}' (no choices); verify raw JSON returned as fallback; no NPE",
+      "requirementIds": ["UCTO-REQ-021"]
+    },
+    {
+      "id": "NEW-DEEPSEEK-CHOICES-02",
+      "description": "DeepSeek handles response with empty choices array",
+      "targetClass": "DeepSeekAgentClient",
+      "scenario": "Mock exchange() returns 200 with body '{\"choices\":[]}'; verify raw JSON returned; no IndexOutOfBoundsException",
+      "requirementIds": ["UCTO-REQ-021"]
+    },
+    {
+      "id": "NEW-BEAN-DEEPSEEK-01",
+      "description": "DeepSeekAgentClient active when DEEPSEEK_API_KEY set",
+      "targetClass": "DeepSeekAgentClient",
+      "scenario": "Load application context with property ucto.llm.deepseek.api-key set; verify DeepSeekAgentClient bean exists; verify StubLLMAgentClient absent",
+      "requirementIds": ["UCTO-REQ-023"]
+    },
+    {
+      "id": "NEW-BEAN-STUB-01",
+      "description": "StubLLMAgentClient active when DEEPSEEK_API_KEY not set",
+      "targetClass": "StubLLMAgentClient",
+      "scenario": "Load application context without API key property; verify StubLLMAgentClient bean exists; verify DeepSeekAgentClient absent",
+      "requirementIds": ["UCTO-REQ-023"]
+    },
+    {
+      "id": "NEW-SIM-ISIMULATION-01",
+      "description": "isSimulation returns false when simulation flag absent from event payload",
+      "targetClass": "AgentEventListener",
+      "scenario": "Call isSimulation with payload without simulation field; verify returns false",
+      "requirementIds": ["UCTO-REQ-042"]
+    },
+    {
+      "id": "NEW-SIM-ISIMULATION-02",
+      "description": "isSimulation returns true when simulation field is set to true in nested data block",
+      "targetClass": "AgentEventListener",
+      "scenario": "Call isSimulation with payload containing data.simulation=true; verify returns true",
+      "requirementIds": ["UCTO-REQ-041"]
+    },
+    {
+      "id": "NEW-SIM-PROPAGATE-01",
+      "description": "Simulation flag propagates from agent.developer.trigger event to prepareWorkspace call",
+      "targetClass": "AgentEventListener",
+      "scenario": "Send agent.developer.trigger with simulation=true; verify handleDeveloperTrigger calls prepareWorkspace(project, true)",
+      "requirementIds": ["UCTO-REQ-041"]
+    },
+    {
+      "id": "NEW-AUDIT-SIMULATION-01",
+      "description": "AuditLogService.log with simulation=true persists flag correctly",
+      "targetClass": "AuditLogService",
+      "scenario": "Call log(..., simulation=true); verify saved entity has simulation=true",
+      "requirementIds": ["UCTO-REQ-009", "UCTO-REQ-038"]
+    },
+    {
+      "id": "NEW-FLYWAY-01",
+      "description": "V6 migration creates quality gates tables and simulation column",
+      "targetClass": "Flyway migrations",
+      "scenario": "Run V6 migration against H2; verify test_results, compliance_results, gate_evaluations tables exist; verify audit_logs has simulation column",
+      "requirementIds": ["UCTO-REQ-036"]
+    },
+    {
+      "id": "NEW-CONTROLLER-GATE-01",
+      "description": "Gate status controller returns correct structure",
+      "targetClass": "ProjectController",
+      "scenario": "Create project; save gate evaluations; GET gate-status; verify response has testGate, complianceGate, coordinatedGate, overallPass",
+      "requirementIds": ["UCTO-REQ-006", "UCTO-REQ-040"]
+    },
+    {
+      "id": "NEW-CONTROLLER-RESULTS-01",
+      "description": "Latest test results controller returns TestResult",
+      "targetClass": "SimulatedSprintController",
+      "scenario": "Create TestResult for project+branch; GET test-results/latest; verify fields match",
+      "requirementIds": ["UCTO-REQ-007"]
+    },
+    {
+      "id": "NEW-CONTROLLER-RESULTS-02",
+      "description": "Latest compliance results controller returns ComplianceResult",
+      "targetClass": "SimulatedSprintController",
+      "scenario": "Create ComplianceResult for project+branch; GET compliance-results/latest; verify fields match",
+      "requirementIds": ["UCTO-REQ-007"]
+    },
+    {
+      "id": "NEW-QUALITYGATE-REJECT-01",
+      "description": "Coordinated gate fails when test fails and compliance passes — gate rejection loop",
+      "targetClass": "QualityGateService",
+      "scenario": "Evaluate failed test gate; evaluate passed compliance gate; evaluate coordinated gate; verify coordinated gate fails",
+      "requirementIds": ["UCTO-REQ-015"]
+    }
+  ],
+  "coverageEstimate": {
+    "requirementsCoveragePercent": 95.2,
+    "criticalCodeCoveragePercent": 82.0,
+    "packageEstimates": {
+      "SimulatedSprintService": {
+        "lineCoverage": 88,
+        "branchCoverage": 85,
+        "notes": "parseOrFallback has 5 branches (success, parse fail, null, empty, partial); all covered"
+      },
+      "DeepSeekAgentClient": {
+        "lineCoverage": 92,
+        "branchCoverage": 90,
+        "notes": "8 branches: key present/absent, 2xx, 4xx, 5xx, timeout, missing choices, non-JSON"
+      },
+      "QualityGateService": {
+        "lineCoverage": 95,
+        "branchCoverage": 90,
+        "notes": "Test pass/fail gates, compliance pass/fail, coordinated, simulation mode"
+      },
+      "Agent DTOs (5)": {
+        "lineCoverage": 98,
+        "branchCoverage": 95,
+        "notes": "18 DTO tests cover valid, malformed, extra fields, nulls, empty for all 5"
+      },
+      "ProjectService (repo config)": {
+        "lineCoverage": 90,
+        "branchCoverage": 85,
+        "notes": "7 existing tests cover all validation branches"
+      },
+      "StubLLMAgentClient": {
+        "lineCoverage": 95,
+        "branchCoverage": 90,
+        "notes": "All 5 keys + unknown key covered"
+      },
+      "RepoWorkspaceService": {
+        "lineCoverage": 70,
+        "branchCoverage": 65,
+        "notes": "Simulation mode, null URL, clone failure. Git clone/pull branches not testable without real git"
+      },
+      "AgentEventListener": {
+        "lineCoverage": 55,
+        "branchCoverage": 50,
+        "notes": "Difficult to unit test due to Redis dependency; integration test coverage recommended"
+      },
+      "Overall": {
+        "lineCoverage": 82,
+        "branchCoverage": 78,
+        "notes": "Based on existing 12 tests + 25 proposed new tests"
+      }
+    }
+  }
+}

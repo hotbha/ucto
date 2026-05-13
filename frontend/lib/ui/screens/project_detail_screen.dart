@@ -7,8 +7,13 @@ import '../../blocs/screen/screen_bloc.dart';
 import '../../models/project.dart';
 import '../../models/screen_model.dart';
 import '../../models/requirement.dart';
+import '../../models/gate_status.dart';
+import '../../services/api_service.dart';
+
+final ApiService _apiService = ApiService();
 
 class ProjectDetailScreen extends StatefulWidget {
+
   final int projectId;
   const ProjectDetailScreen({super.key, required this.projectId});
 
@@ -41,8 +46,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               Tab(text: 'Overview'),
               Tab(text: 'Requirements'),
               Tab(text: 'Screens'),
-              Tab(text: 'Deploy'),
+              Tab(text: 'Quality & Agents'),
             ],
+
           ),
         ),
         body: TabBarView(
@@ -50,9 +56,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             _OverviewTab(projectId: projectId),
             _RequirementsTab(projectId: projectId),
             _ScreensTab(projectId: projectId),
-            _DeployTab(projectId: projectId),
+            _QualityAgentsTab(projectId: projectId),
           ],
         ),
+
       ),
     );
   }
@@ -515,42 +522,299 @@ class _ScreenPreviewCard extends StatelessWidget {
   }
 }
 
-class _DeployTab extends StatelessWidget {
+class _QualityAgentsTab extends StatefulWidget {
   final int projectId;
-  const _DeployTab({required this.projectId});
+  const _QualityAgentsTab({required this.projectId});
+
+  @override
+  State<_QualityAgentsTab> createState() => _QualityAgentsTabState();
+}
+
+class _QualityAgentsTabState extends State<_QualityAgentsTab> {
+  GateStatus? _gateStatus;
+  bool _loading = true;
+  String _branch = 'main';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGateStatus();
+  }
+
+  Future<void> _loadGateStatus() async {
+    setState(() => _loading = true);
+    try {
+      final data = await _apiService.get(
+        '/projects/${widget.projectId}/branches/$_branch/gate-status',
+      );
+      if (data is Map<String, dynamic>) {
+        setState(() {
+          _gateStatus = GateStatus.fromJson(data);
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Deployment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFFF1F5F9))),
-                  const SizedBox(height: 12),
-                  const Text('Your app will be deployed when ready.', style: TextStyle(color: Color(0xFF94A3B8))),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.cloud_upload),
-                      label: const Text('Deploy to Staging'),
-                    ),
-                  ),
-                ],
+          // Branch selector
+          Row(
+            children: [
+              const Text('Branch: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.3)),
+                ),
+                child: Text(_branch, style: const TextStyle(color: Color(0xFF7C3AED), fontSize: 12)),
               ),
-            ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _loadGateStatus,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Refresh', style: TextStyle(fontSize: 12)),
+              ),
+            ],
           ),
+          const SizedBox(height: 16),
+
+          // Gate status cards
+          if (_loading)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
+            ))
+          else if (_gateStatus == null)
+            _buildEmptyState()
+          else ...[
+            // Overall status banner
+            _buildOverallBanner(),
+            const SizedBox(height: 16),
+
+            // Test gate card
+            _buildGateCard(
+              title: 'Test Gate',
+              icon: Icons.check_circle_outline,
+              gate: _gateStatus!.testGate,
+            ),
+            const SizedBox(height: 12),
+
+            // Compliance gate card
+            _buildGateCard(
+              title: 'Compliance Gate',
+              icon: Icons.shield_outlined,
+              gate: _gateStatus!.complianceGate,
+            ),
+            const SizedBox(height: 12),
+
+            // Coordinated gate card
+            _buildGateCard(
+              title: 'Coordinated Gate',
+              icon: Icons.account_tree_outlined,
+              gate: _gateStatus!.coordinatedGate,
+            ),
+          ],
+
+          const SizedBox(height: 24),
+          const Divider(color: Color(0xFF334155)),
+          const SizedBox(height: 16),
+          const Text('Agent Events', style: TextStyle(color: Color(0xFFF1F5F9), fontWeight: FontWeight.w600, fontSize: 16)),
+          const SizedBox(height: 8),
+          _buildAgentEventList(),
         ],
       ),
     );
   }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            const Icon(Icons.assessment_outlined, size: 48, color: Color(0xFF334155)),
+            const SizedBox(height: 12),
+            const Text('No gate evaluations yet', style: TextStyle(color: Color(0xFF94A3B8))),
+            const SizedBox(height: 4),
+            const Text('Run agents to generate quality gate results', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverallBanner() {
+    final passed = _gateStatus!.overallPass;
+    return Card(
+      color: passed
+          ? const Color(0xFF22C55E).withValues(alpha: 0.15)
+          : const Color(0xFFEF4444).withValues(alpha: 0.15),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              passed ? Icons.verified : Icons.warning_amber_rounded,
+              color: passed ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  passed ? 'All Gates Passed' : 'Gates Blocked',
+                  style: TextStyle(
+                    color: passed ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _gateStatus!.coordinatedGate?.details ?? 'Awaiting evaluation',
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGateCard({
+    required String title,
+    required IconData icon,
+    required GateEvaluation? gate,
+  }) {
+    if (gate == null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, color: const Color(0xFF64748B), size: 24),
+              const SizedBox(width: 12),
+              Expanded(child: Text(title, style: const TextStyle(color: Color(0xFFF1F5F9), fontWeight: FontWeight.w500))),
+              Text('No data', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 24,
+                    color: gate.passed ? const Color(0xFF22C55E) : const Color(0xFFEF4444)),
+                const SizedBox(width: 12),
+                Expanded(child: Text(title, style: const TextStyle(color: Color(0xFFF1F5F9), fontWeight: FontWeight.w500))),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: (gate.passed ? const Color(0xFF22C55E) : const Color(0xFFEF4444)).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: (gate.passed ? const Color(0xFF22C55E) : const Color(0xFFEF4444)).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    gate.passed ? 'PASS' : 'FAIL',
+                    style: TextStyle(
+                      color: gate.passed ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (gate.details != null && gate.details!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(gate.details!, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (gate.simulation)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.science_outlined, size: 12, color: Color(0xFFF59E0B)),
+                        SizedBox(width: 4),
+                        Text('SIM', style: TextStyle(color: Color(0xFFF59E0B), fontSize: 10, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                const Spacer(),
+                if (gate.evaluatedAt != null)
+                  Text(_formatTimestamp(gate.evaluatedAt!),
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAgentEventList() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Recent evaluations are shown above. Each evaluation is recorded in the audit log with correlation IDs for traceability.',
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.info_outline, size: 14, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
+                const Text('Simulation mode ', style: TextStyle(color: Color(0xFFF59E0B), fontSize: 12)),
+                const Text('indicates dry-run evaluations with no side effects.',
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatTimestamp(String iso) {
+    try {
+      final dt = DateTime.parse(iso);
+      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso;
+    }
+  }
 }
+

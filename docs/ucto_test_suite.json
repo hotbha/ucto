@@ -1,0 +1,1018 @@
+{
+  "testSuiteMeta": {
+    "title": "UCTO Product-Level Test Suite",
+    "version": "1.0",
+    "targetCoverage": "95%+ requirement coverage",
+    "generatedAt": "2026-05-13",
+    "totalTestCases": 63
+  },
+  "uctoTestCases": [
+    {
+      "id": "TC-AUTH-01",
+      "title": "JWT issuance on login and token refresh flow",
+      "type": "integration",
+      "requirementIds": ["REQ-AUTH-01"],
+      "targetComponents": ["AuthController", "JwtService", "SecurityConfig"],
+      "preconditions": ["Database has a registered user"],
+      "steps": [
+        "POST /api/auth/login with valid credentials",
+        "Extract access token from response",
+        "Call a protected endpoint with the token",
+        "POST /api/auth/refresh with refresh token"
+      ],
+      "expectedResult": "Access token returned; protected endpoint returns 200; refresh returns new token pair",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AUTH-02",
+      "title": "Google OAuth login flow succeeds",
+      "type": "integration",
+      "requirementIds": ["REQ-AUTH-02"],
+      "targetComponents": ["AuthController", "OAuth2Config"],
+      "preconditions": ["Google OAuth client configured", "User exists or can be created"],
+      "steps": [
+        "POST /api/auth/oauth with valid Google ID token",
+        "Verify JWT returned with correct user info"
+      ],
+      "expectedResult": "JWT issued; user created or linked if new",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AUTH-03",
+      "title": "Email+Password registration and login",
+      "type": "integration",
+      "requirementIds": ["REQ-AUTH-01", "REQ-AUTH-03"],
+      "targetComponents": ["AuthController", "UserService"],
+      "preconditions": ["Email not already registered"],
+      "steps": [
+        "POST /api/auth/register with email, password, name",
+        "POST /api/auth/login with same email/password"
+      ],
+      "expectedResult": "Account created; login returns JWT",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AUTH-04",
+      "title": "OTP validation for password reset",
+      "type": "integration",
+      "requirementIds": ["REQ-AUTH-04"],
+      "targetComponents": ["AuthController", "SmsService", "EmailService"],
+      "preconditions": ["User exists with phone number"],
+      "steps": [
+        "POST /api/auth/forgot-password with phone",
+        "POST /api/auth/verify-otp with correct OTP",
+        "POST /api/auth/reset-password with new password"
+      ],
+      "expectedResult": "OTP sent; verified; password reset succeeds",
+      "priority": "High"
+    },
+    {
+      "id": "TC-RBAC-01",
+      "title": "Role-based access: Founder can manage project, Viewer is read-only",
+      "type": "integration",
+      "requirementIds": ["REQ-RBAC-01"],
+      "targetComponents": ["ProjectController", "SecurityConfig"],
+      "preconditions": ["Two users exist: one FOUNDER role, one VIEWER role", "Project exists owned by FOUNDER"],
+      "steps": [
+        "Founder PUT /api/projects/{id} — expect 200",
+        "Viewer PUT /api/projects/{id} — expect 403",
+        "Founder DELETE /api/projects/{id} — expect 200"
+      ],
+      "expectedResult": "Founder can modify; Viewer is rejected with 403",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AUD-01",
+      "title": "Success case creates audit log entry",
+      "type": "unit",
+      "requirementIds": ["REQ-AUD-01"],
+      "targetComponents": ["AuditLogService", "AuditLogRepository"],
+      "preconditions": ["Mock repository"],
+      "steps": [
+        "Call auditLogService.log(userId, projectId, 'LOGIN', 'details', 'ip', true)",
+        "Verify auditLogRepository.save() was called with correct action"
+      ],
+      "expectedResult": "AuditLog saved with action='LOGIN', success=true",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AUD-02",
+      "title": "Failed attempt creates audit log entry with reason",
+      "type": "unit",
+      "requirementIds": ["REQ-AUD-01"],
+      "targetComponents": ["AuditLogService"],
+      "preconditions": ["Mock repository"],
+      "steps": [
+        "Call auditLogService.log(userId, null, 'LOGIN_FAILED', 'Invalid password', 'ip', false)",
+        "Verify saved with success=false and details='Invalid password'"
+      ],
+      "expectedResult": "AuditLog saved with success=false and descriptive details",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-AGENT-01",
+      "title": "Agent trigger via OrchestratorService publishes to Redis topic",
+      "type": "integration",
+      "requirementIds": ["REQ-AGENT-01"],
+      "targetComponents": ["AgentOrchestrationService", "RedisConfig"],
+      "preconditions": ["Redis is running", "User has available agent runs"],
+      "steps": [
+        "Call agentOrchestrationService.triggerAgent('ba', projectId, userId, 'ip', data)",
+        "Verify redisTemplate.convertAndSend was called with agent.ba.trigger"
+      ],
+      "expectedResult": "Event published to correct agent topic; audit log created; usage counter incremented",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AGENT-02",
+      "title": "Agent trigger blocked when run limit exceeded",
+      "type": "unit",
+      "requirementIds": ["REQ-AGENT-01", "REQ-METER-01"],
+      "targetComponents": ["AgentOrchestrationService", "SubscriptionService"],
+      "preconditions": ["SubscriptionService.canRunAgent returns false"],
+      "steps": [
+        "Mock subscriptionService.canRunAgent(userId) → false",
+        "Call triggerAgent(...)",
+        "Verify AgentRunLimitExceededException thrown"
+      ],
+      "expectedResult": "Exception thrown; no event published; no usage recorded",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AGENT-03",
+      "title": "AgentEventListener subscribes and processes incoming events",
+      "type": "unit",
+      "requirementIds": ["REQ-AGENT-01"],
+      "targetComponents": ["AgentEventListener"],
+      "preconditions": ["Mock StringRedisTemplate", "Mock AuditLogService"],
+      "steps": [
+        "Simulate incoming message on agent.ba.complete",
+        "Trigger onMessage() with valid JSON payload",
+        "Verify handleAgentComplete() routes to next agent"
+      ],
+      "expectedResult": "Event parsed; downstream trigger event published; audit logged",
+      "priority": "High"
+    },
+    {
+      "id": "TC-AGENT-04",
+      "title": "Duplicate event IDs are silently dropped",
+      "type": "unit",
+      "requirementIds": ["REQ-AGENT-01"],
+      "targetComponents": ["AgentEventListener"],
+      "preconditions": ["Processed event cache contains eventId"],
+      "steps": [
+        "Send same eventId twice to onMessage()",
+        "Verify second call does not trigger any downstream publishing"
+      ],
+      "expectedResult": "Duplicate skipped; no side effects",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-LLM-01",
+      "title": "DeepSeekAgentClient sends correct request payload",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-01"],
+      "targetComponents": ["DeepSeekAgentClient", "PromptCatalog"],
+      "preconditions": ["Mock RestTemplate", "Mock PromptCatalog returns test prompt"],
+      "steps": [
+        "Set DEEPSEEK_API_KEY env",
+        "Call execute('BA_REQUIREMENTS', {projectTitle:'Test'})",
+        "Capture request body from RestTemplate.exchange()"
+      ],
+      "expectedResult": "POST to DeepSeek API with correct model, messages[], auth header, temperature, max_tokens",
+      "priority": "High"
+    },
+    {
+      "id": "TC-LLM-02",
+      "title": "DeepSeekAgentClient parses successful response",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-01"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["Mock RestTemplate returns valid DeepSeek response"],
+      "steps": [
+        "Mock exchange() returning {'choices':[{'message':{'content':'{\"result\":\"ok\"}'}}]}",
+        "Call execute('BA_REQUIREMENTS', context)",
+        "Verify returned string contains 'ok'"
+      ],
+      "expectedResult": "Content extracted from choices[0].message.content",
+      "priority": "High"
+    },
+    {
+      "id": "TC-LLM-03",
+      "title": "DeepSeekAgentClient handles HTTP error gracefully",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-01", "REQ-LLM-02"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["Mock RestTemplate returns 429 Too Many Requests"],
+      "steps": [
+        "Mock exchange() → 429 response",
+        "Call execute(...)",
+        "Verify returned JSON contains 'error' key with status code"
+      ],
+      "expectedResult": "Error JSON returned with '429' and message; no exception thrown",
+      "priority": "High"
+    },
+    {
+      "id": "TC-LLM-04",
+      "title": "DeepSeekAgentClient handles network timeout",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-02"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["Mock RestTemplate throws connection timeout"],
+      "steps": [
+        "Mock exchange() → throws RuntimeException('Connection timed out')",
+        "Call execute(...)",
+        "Verify returned JSON contains error message"
+      ],
+      "expectedResult": "Error JSON with 'Connection timed out' returned; no uncaught exception",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-LLM-05",
+      "title": "DeepSeekAgentClient unavailable when no API key",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-02"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["API key set to empty string"],
+      "steps": [
+        "Set apiKey = ''",
+        "Call isAvailable()",
+        "Call execute(...)",
+        "Verify returned JSON contains 'not configured'"
+      ],
+      "expectedResult": "isAvailable() returns false; execute returns error without calling HTTP",
+      "priority": "High"
+    },
+    {
+      "id": "TC-LLM-06",
+      "title": "DeepSeekAgentClient handles invalid JSON response from API",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-02"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["Mock RestTemplate returns non-JSON response"],
+      "steps": [
+        "Mock exchange() → 200 with body 'not json at all'",
+        "Call execute(...)",
+        "Verify raw response body is returned as fallback"
+      ],
+      "expectedResult": "Response body returned as-is without parsing failure",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-LLM-07",
+      "title": "DeepSeekAgentClient handles partial/truncated response from LLM",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-02"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["Mock RestTemplate returns response with missing choices array"],
+      "steps": [
+        "Mock exchange() → 200 with body '{\"id\":\"x\"}' (no choices)",
+        "Call execute(...)",
+        "Verify raw JSON returned; no NPE thrown"
+      ],
+      "expectedResult": "Raw JSON returned as fallback; no exception",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-LLM-08",
+      "title": "StubLLMAgentClient fallback returns valid JSON for all 5 prompt keys",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-03"],
+      "targetComponents": ["StubLLMAgentClient", "PromptCatalog"],
+      "preconditions": ["PromptCatalog loaded with all 5 keys", "No DeepSeek API key configured"],
+      "steps": [
+        "Call execute('BA_REQUIREMENTS', null) — verify valid JSON with 'epics' or 'requirements'",
+        "Call execute('ARCHITECT_DESIGN', null) — verify valid JSON with 'components'",
+        "Call execute('DEV_IMPLEMENT', null) — verify valid JSON with 'filesToChange'",
+        "Call execute('TEST_GENERATE', null) — verify valid JSON with 'testsRun'",
+        "Call execute('COMPLIANCE_CHECK', null) — verify valid JSON with 'overallStatus'"
+      ],
+      "expectedResult": "All 5 calls return valid parseable JSON matching expected schemas",
+      "priority": "High"
+    },
+    {
+      "id": "TC-LLM-09",
+      "title": "StubLLMAgentClient returns error for unknown prompt key",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-03"],
+      "targetComponents": ["StubLLMAgentClient"],
+      "preconditions": ["PromptCatalog does not have key 'UNKNOWN'"],
+      "steps": [
+        "Call execute('UNKNOWN', null)",
+        "Verify returned JSON contains 'error' key"
+      ],
+      "expectedResult": "Error JSON returned; no crash",
+      "priority": "Low"
+    },
+    {
+      "id": "TC-LLM-10",
+      "title": "PromptCatalog loads YAML and provides variable substitution",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-01"],
+      "targetComponents": ["PromptCatalog"],
+      "preconditions": ["agent_prompts.yaml exists on classpath"],
+      "steps": [
+        "Initialize PromptCatalog",
+        "Call getPrompt('BA_REQUIREMENTS', {projectTitle:'Test'})",
+        "Verify substituted prompt contains 'Test'"
+      ],
+      "expectedResult": "All 5 prompts loaded; variable substitution works correctly",
+      "priority": "High"
+    },
+    {
+      "id": "TC-REPO-01",
+      "title": "Repo config GET/PUT endpoints with validation",
+      "type": "integration",
+      "requirementIds": ["REQ-REPO-01"],
+      "targetComponents": ["ProjectController", "ProjectService"],
+      "preconditions": ["Authenticated user", "Project exists"],
+      "steps": [
+        "PUT /api/projects/{id}/repo with valid config → expect 200",
+        "GET /api/projects/{id}/repo → expect same config returned",
+        "PUT with repoProvider but empty repoUrl → expect 400",
+        "PUT with invalid repoProvider → expect 400"
+      ],
+      "expectedResult": "CRUD works; validation rejects invalid configs with 400",
+      "priority": "High"
+    },
+    {
+      "id": "TC-REPO-02",
+      "title": "Only project owner can update repo config",
+      "type": "integration",
+      "requirementIds": ["REQ-RBAC-01", "REQ-REPO-01"],
+      "targetComponents": ["ProjectController"],
+      "preconditions": ["Two users: owner and non-owner", "Project exists"],
+      "steps": [
+        "Non-owner PUT /api/projects/{id}/repo → expect 403"
+      ],
+      "expectedResult": "Non-owner receives 403 Forbidden",
+      "priority": "High"
+    },
+    {
+      "id": "TC-REPO-03",
+      "title": "RepoWorkspaceService rejects null/blank repoUrl",
+      "type": "unit",
+      "requirementIds": ["REQ-REPO-02"],
+      "targetComponents": ["RepoWorkspaceService"],
+      "preconditions": ["Project with null repoUrl"],
+      "steps": [
+        "Call prepareWorkspace(project, simulation=false)",
+        "Expect RepoWorkspaceException"
+      ],
+      "expectedResult": "Exception thrown with 'repoUrl is not configured' message",
+      "priority": "High"
+    },
+    {
+      "id": "TC-REPO-04",
+      "title": "RepoWorkspaceService simulation mode skips git operations",
+      "type": "unit",
+      "requirementIds": ["REQ-REPO-02", "REQ-SIM-01"],
+      "targetComponents": ["RepoWorkspaceService"],
+      "preconditions": ["Project with valid repoUrl", "Mock AuditLogService"],
+      "steps": [
+        "Call prepareWorkspace(project, simulation=true)",
+        "Verify auditLogService.logAuthAction called with 'REPO_PREPARE_SIMULATED'",
+        "Verify no real git clone occurred (empty source dir exists)"
+      ],
+      "expectedResult": "Source dir created; git not invoked; simulated audit logged",
+      "priority": "High"
+    },
+    {
+      "id": "TC-REPO-05",
+      "title": "RepoWorkspaceService clone failure handling",
+      "type": "unit",
+      "requirementIds": ["REQ-REPO-02"],
+      "targetComponents": ["RepoWorkspaceService"],
+      "preconditions": ["Project with invalid/network-unreachable URL", "Mock AuditLogService"],
+      "steps": [
+        "Call prepareWorkspace(project, simulation=false)",
+        "Expect RepoWorkspaceException with 'Clone failed' or timeout message"
+      ],
+      "expectedResult": "Exception thrown; audit log records failure",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-SPRINT-01",
+      "title": "SimulatedSprint runs full 5-agent pipeline successfully",
+      "type": "integration",
+      "requirementIds": ["REQ-SPRINT-01"],
+      "targetComponents": ["SimulatedSprintService", "LLMAgentClient", "QualityGateService"],
+      "preconditions": ["Project exists", "StubLLMAgentClient active (no DeepSeek key)"],
+      "steps": [
+        "POST /api/projects/{id}/simulated-sprint with changeDescription",
+        "Verify response has 5 steps (BA, Architect, Developer, Tester, Compliance)",
+        "Verify all steps have status=COMPLETED and simulation=true",
+        "Verify gateStatus is computed",
+        "Verify testResult and complianceResult summaries present"
+      ],
+      "expectedResult": "5 steps completed; test results persisted; gates evaluated",
+      "priority": "High"
+    },
+    {
+      "id": "TC-SPRINT-02",
+      "title": "SimulatedSprint rejects empty changeDescription",
+      "type": "unit",
+      "requirementIds": ["REQ-SPRINT-01"],
+      "targetComponents": ["SimulatedSprintService"],
+      "preconditions": ["Project exists"],
+      "steps": [
+        "Call runSprint(id, {branch:'main', changeDescription:''})",
+        "Expect IllegalArgumentException"
+      ],
+      "expectedResult": "Exception thrown with 'changeDescription is required'",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-SPRINT-03",
+      "title": "SimulatedSprint rejects non-existent project",
+      "type": "unit",
+      "requirementIds": ["REQ-SPRINT-01"],
+      "targetComponents": ["SimulatedSprintService"],
+      "preconditions": ["Project does not exist for given ID"],
+      "steps": [
+        "Mock projectService.getProjectById() → null",
+        "Call runSprint(id, req)",
+        "Expect IllegalArgumentException"
+      ],
+      "expectedResult": "Exception thrown with 'Project not found'",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-SPRINT-04",
+      "title": "SimulatedSprint defaults branch to 'main' when null",
+      "type": "unit",
+      "requirementIds": ["REQ-SPRINT-01"],
+      "targetComponents": ["SimulatedSprintService"],
+      "preconditions": ["Project exists", "Request with branch=null"],
+      "steps": [
+        "Call runSprint with branch=null",
+        "Verify response.branch = 'main'"
+      ],
+      "expectedResult": "Branch defaults to 'main'",
+      "priority": "Low"
+    },
+    {
+      "id": "TC-SPRINT-05",
+      "title": "SimulatedSprint persists TestResult and ComplianceResult with simulation=true",
+      "type": "integration",
+      "requirementIds": ["REQ-SPRINT-02", "REQ-SIM-01"],
+      "targetComponents": ["SimulatedSprintService", "TestResultRepository", "ComplianceResultRepository"],
+      "preconditions": ["Project exists", "StubLLMAgentClient active"],
+      "steps": [
+        "Run simulated sprint",
+        "Query testResultRepository for correlationId",
+        "Verify testResult.simulation = true, testResult.branch = 'main'",
+        "Verify complianceResult.simulation = true"
+      ],
+      "expectedResult": "Both entities saved with simulation=true and correct branch",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-01",
+      "title": "Test gate passes when all tests pass with sufficient coverage",
+      "type": "unit",
+      "requirementIds": ["REQ-GATE-01"],
+      "targetComponents": ["QualityGateService"],
+      "preconditions": ["TestResult with testsFailed=0, coveragePercent >= 80"],
+      "steps": [
+        "Build TestResult: testsRun=10, testsPassed=10, testsFailed=0, coveragePercent=85",
+        "Call evaluateTestGate()",
+        "Verify returned GateEvaluation has passed=true"
+      ],
+      "expectedResult": "Gate passed; audit logged with GATE_TEST_EVALUATE",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-02",
+      "title": "Test gate fails when coverage below threshold",
+      "type": "unit",
+      "requirementIds": ["REQ-GATE-01"],
+      "targetComponents": ["QualityGateService"],
+      "preconditions": ["TestResult with coveragePercent < 80"],
+      "steps": [
+        "Build TestResult: testsRun=10, testsPassed=10, testsFailed=0, coveragePercent=60",
+        "Call evaluateTestGate()",
+        "Verify passed=false"
+      ],
+      "expectedResult": "Gate failed due to low coverage",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-03",
+      "title": "Test gate fails when tests fail",
+      "type": "unit",
+      "requirementIds": ["REQ-GATE-01"],
+      "targetComponents": ["QualityGateService"],
+      "preconditions": ["TestResult with testsFailed > 0"],
+      "steps": [
+        "Build TestResult: testsRun=10, testsPassed=8, testsFailed=2, coveragePercent=90",
+        "Call evaluateTestGate()",
+        "Verify passed=false"
+      ],
+      "expectedResult": "Gate failed due to test failures",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-04",
+      "title": "Compliance gate passes when overallStatus is PASS",
+      "type": "unit",
+      "requirementIds": ["REQ-GATE-02"],
+      "targetComponents": ["QualityGateService"],
+      "preconditions": ["ComplianceResult with overallStatus='PASS'"],
+      "steps": [
+        "Build ComplianceResult: overallStatus='PASS', severity='LOW'",
+        "Call evaluateComplianceGate()",
+        "Verify passed=true"
+      ],
+      "expectedResult": "Gate passed; audit logged with GATE_COMPLIANCE_EVALUATE",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-05",
+      "title": "Compliance gate fails when overallStatus is FAIL",
+      "type": "unit",
+      "requirementIds": ["REQ-GATE-02"],
+      "targetComponents": ["QualityGateService"],
+      "preconditions": ["ComplianceResult with overallStatus='FAIL'"],
+      "steps": [
+        "Build ComplianceResult: overallStatus='FAIL', severity='HIGH'",
+        "Call evaluateComplianceGate()",
+        "Verify passed=false"
+      ],
+      "expectedResult": "Gate failed",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-06",
+      "title": "Coordinated gate requires both test and compliance to pass",
+      "type": "unit",
+      "requirementIds": ["REQ-GATE-03"],
+      "targetComponents": ["QualityGateService"],
+      "preconditions": ["TestGate and ComplianceGate evaluations"],
+      "steps": [
+        "Case 1: both pass → coordinated pass",
+        "Case 2: test fails, compliance passes → coordinated fail",
+        "Case 3: test passes, compliance fails → coordinated fail",
+        "Case 4: both fail → coordinated fail"
+      ],
+      "expectedResult": "Coordinated gate only passes when both sub-gates pass",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-07",
+      "title": "Simulation mode uses _SIMULATED audit action suffix",
+      "type": "unit",
+      "requirementIds": ["REQ-SIM-01", "REQ-GATE-01"],
+      "targetComponents": ["QualityGateService"],
+      "preconditions": ["simulation=true flag"],
+      "steps": [
+        "Call evaluateTestGate() with simulation=true",
+        "Verify auditLogService called with 'GATE_TEST_EVALUATE_SIMULATED'",
+        "Verify GateEvaluation.simulation=true"
+      ],
+      "expectedResult": "Simulated action suffix used; entity marked simulated",
+      "priority": "High"
+    },
+    {
+      "id": "TC-GATE-08",
+      "title": "Gate status endpoint returns latest evaluations",
+      "type": "integration",
+      "requirementIds": ["REQ-GATE-04"],
+      "targetComponents": ["ProjectController", "QualityGateService"],
+      "preconditions": ["Project exists", "At least one gate evaluation exists"],
+      "steps": [
+        "GET /api/projects/{id}/branches/{branch}/gate-status",
+        "Verify response contains testGate, complianceGate, coordinatedGate, overallPass"
+      ],
+      "expectedResult": "Gate status returned with all three gate types and overall flag",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-SIM-01",
+      "title": "Simulation flag propagates from event to all side-effect services",
+      "type": "unit",
+      "requirementIds": ["REQ-SIM-01"],
+      "targetComponents": ["AgentEventListener", "RepoWorkspaceService"],
+      "preconditions": ["Event payload with simulation=true"],
+      "steps": [
+        "Send agent.developer.trigger with simulation=true",
+        "Verify handleDeveloperTrigger calls prepareWorkspace(project, true)",
+        "Verify prepared workspace does NOT have real git operations"
+      ],
+      "expectedResult": "Simulation flag extracted; passed to RepoWorkspaceService; git skipped",
+      "priority": "High"
+    },
+    {
+      "id": "TC-SIM-02",
+      "title": "Simulation flag is false by default",
+      "type": "unit",
+      "requirementIds": ["REQ-SIM-01"],
+      "targetComponents": ["AgentEventListener"],
+      "preconditions": ["Event payload without simulation field"],
+      "steps": [
+        "Call isSimulation(payload without simulation flag)",
+        "Verify returns false"
+      ],
+      "expectedResult": "Default is false when flag absent",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-SIM-03",
+      "title": "AuditLog records simulation flag",
+      "type": "unit",
+      "requirementIds": ["REQ-SIM-01"],
+      "targetComponents": ["AuditLogService"],
+      "preconditions": ["Mock repository"],
+      "steps": [
+        "Call log(userId, projectId, action, details, ip, success, simulation=true)",
+        "Verify saved AuditLog has simulation=true"
+      ],
+      "expectedResult": "AuditLog entity stores simulation flag correctly",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-BOOT-01",
+      "title": "Bootstrap API creates project and generates skeleton",
+      "type": "integration",
+      "requirementIds": ["REQ-BOOT-01"],
+      "targetComponents": ["BootstrapService", "ProjectService"],
+      "preconditions": ["Authenticated user", "Template directory exists"],
+      "steps": [
+        "POST /api/orchestrator/bootstrap with {prompt:'Task manager', targetStack:'SPRING_REACT'}",
+        "Verify project created with status=CREATED",
+        "Verify workspace directory exists at returned path",
+        "Verify backend and frontend folders exist"
+      ],
+      "expectedResult": "Project created; workspace has backend/ and frontend/ with generated files",
+      "priority": "High"
+    },
+    {
+      "id": "TC-BOOT-02",
+      "title": "BootstrapService generates backend with correct substitutions",
+      "type": "unit",
+      "requirementIds": ["REQ-BOOT-01"],
+      "targetComponents": ["BootstrapService"],
+      "preconditions": ["Template directory available", "Temp workspace"],
+      "steps": [
+        "Call generateBackendSkeleton(workspaceDir, 'my-app', 'My App', 'desc')",
+        "Verify pom.xml contains 'my-app' and 'My App'",
+        "Verify package directory structure under com/myapp"
+      ],
+      "expectedResult": "Placeholders substituted; directory structure correct",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-BOOT-03",
+      "title": "Bootstrap sets default repo fields on new project",
+      "type": "unit",
+      "requirementIds": ["REQ-BOOT-01"],
+      "targetComponents": ["BootstrapService"],
+      "preconditions": ["Mock ProjectService"],
+      "steps": [
+        "Call bootstrap(prompt, stack, userId)",
+        "Verify updateRepoConfig called with branch='main' and null url/provider"
+      ],
+      "expectedResult": "Repo config set with default 'main' branch",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DTO-01",
+      "title": "BaRequirementsOutput parses valid JSON correctly",
+      "type": "unit",
+      "requirementIds": ["REQ-DTO-01"],
+      "targetComponents": ["BaRequirementsOutput"],
+      "preconditions": ["Valid JSON string"],
+      "steps": [
+        "Parse '{\"requirements\":[{\"id\":\"REQ-1\",\"area\":\"Auth\",\"description\":\"Login\",\"risk\":\"High\",\"qualityAttributes\":[],\"openQuestions\":[]}]}'",
+        "Verify requirements list size = 1",
+        "Verify id='REQ-1', area='Auth', description='Login', risk='High'"
+      ],
+      "expectedResult": "All fields correctly deserialized",
+      "priority": "High"
+    },
+    {
+      "id": "TC-DTO-02",
+      "title": "BaRequirementsOutput handles malformed JSON gracefully",
+      "type": "unit",
+      "requirementIds": ["REQ-DTO-01"],
+      "targetComponents": ["BaRequirementsOutput"],
+      "preconditions": ["Invalid JSON string"],
+      "steps": [
+        "Attempt to parse '{broken json'",
+        "Expect JsonParseException"
+      ],
+      "expectedResult": "Jackson throws parse exception; caller can use fallback",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DTO-03",
+      "title": "BaRequirementsOutput ignores unknown fields",
+      "type": "unit",
+      "requirementIds": ["REQ-DTO-01"],
+      "targetComponents": ["BaRequirementsOutput"],
+      "preconditions": ["JSON with extra fields not in DTO"],
+      "steps": [
+        "Parse '{\"requirements\":[{\"id\":\"REQ-1\",\"area\":\"Auth\"}],\"extraField\":\"ignored\"}'",
+        "Verify no exception; requirements populated correctly"
+      ],
+      "expectedResult": "Extra fields silently ignored (ignoreUnknown=true)",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DTO-04",
+      "title": "TesterOutput parses valid test results JSON",
+      "type": "unit",
+      "requirementIds": ["REQ-DTO-02"],
+      "targetComponents": ["TesterOutput"],
+      "preconditions": ["Valid JSON with test metrics"],
+      "steps": [
+        "Parse '{\"testsRun\":6,\"testsPassed\":5,\"testsFailed\":1,\"coveragePercent\":75.0,\"overallStatus\":\"needs_fix\",\"failures\":[{\"testCase\":\"test_1\",\"expected\":\"200\",\"actual\":\"500\"}]}'",
+        "Verify testsRun=6, testsPassed=5, testsFailed=1, coveragePercent=75.0",
+        "Verify failures list size=1 with correct testCase"
+      ],
+      "expectedResult": "All test metrics and failure details correctly parsed",
+      "priority": "High"
+    },
+    {
+      "id": "TC-DTO-05",
+      "title": "ComplianceOutput parses valid compliance JSON",
+      "type": "unit",
+      "requirementIds": ["REQ-DTO-03"],
+      "targetComponents": ["ComplianceOutput"],
+      "preconditions": ["Valid JSON with compliance checks"],
+      "steps": [
+        "Parse '{\"overallStatus\":\"pass\",\"severity\":\"LOW\",\"checksPassed\":[{\"name\":\"DPDP-01\",\"status\":\"PASS\"}],\"checksFailed\":[]}'",
+        "Verify overallStatus='pass', severity='LOW', checksPassed size=1, checksFailed size=0"
+      ],
+      "expectedResult": "Compliance fields correctly parsed",
+      "priority": "High"
+    },
+    {
+      "id": "TC-DTO-06",
+      "title": "ArchitectDesignOutput parses valid JSON",
+      "type": "unit",
+      "requirementIds": ["REQ-DTO-04"],
+      "targetComponents": ["ArchitectDesignOutput"],
+      "preconditions": ["Valid JSON with components and services"],
+      "steps": [
+        "Parse valid architect JSON",
+        "Verify components, services, dataFlows, feasibility all parsed"
+      ],
+      "expectedResult": "All structured fields parsed without error",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DTO-07",
+      "title": "DevImplementOutput parses valid JSON",
+      "type": "unit",
+      "requirementIds": ["REQ-DTO-05"],
+      "targetComponents": ["DevImplementOutput"],
+      "preconditions": ["Valid JSON with file changes"],
+      "steps": [
+        "Parse valid dev implementation JSON",
+        "Verify filesToChange, rationale, riskLevel all parsed"
+      ],
+      "expectedResult": "All file change and risk fields parsed",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-NF-01",
+      "title": "API response time under 500ms for 95% of requests",
+      "type": "non-functional",
+      "requirementIds": ["REQ-NFR-01"],
+      "targetComponents": ["All controllers"],
+      "preconditions": ["Load testing tool available"],
+      "steps": [
+        "Run 1000 requests against /api/health and /api/projects",
+        "Measure p95 response time"
+      ],
+      "expectedResult": "p95 response time < 500ms",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-NF-02",
+      "title": "Concurrent agent trigger calls handled without race conditions",
+      "type": "non-functional",
+      "requirementIds": ["REQ-NFR-01", "REQ-METER-01"],
+      "targetComponents": ["AgentOrchestrationService", "UsageMeterService"],
+      "preconditions": ["High load simulation"],
+      "steps": [
+        "Fire 50 concurrent triggerAgent() calls for same user",
+        "Verify no duplicate eventIds",
+        "Verify usage counter incremented exactly 50 times"
+      ],
+      "expectedResult": "All calls handled; no duplicates; correct usage count",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-NF-03",
+      "title": "Redis failure causes graceful degradation, not crash",
+      "type": "non-functional",
+      "requirementIds": ["REQ-NFR-02"],
+      "targetComponents": ["AgentOrchestrationService", "RedisConfig"],
+      "preconditions": ["Redis server down"],
+      "steps": [
+        "Start application without Redis",
+        "Trigger agent event",
+        "Verify error logged but application does not crash"
+      ],
+      "expectedResult": "Graceful degradation; error logged; app continues running",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-E2E-01",
+      "title": "Full simulated sprint completes end-to-end via API",
+      "type": "e2e",
+      "requirementIds": ["REQ-SPRINT-01", "REQ-GATE-04", "REQ-AUD-01"],
+      "targetComponents": ["All services"],
+      "preconditions": ["Backend running", "Project exists with repo configured"],
+      "steps": [
+        "POST /api/projects/{id}/simulated-sprint with changeDescription",
+        "Verify 200 response with 5 completed steps",
+        "GET /api/projects/{id}/branches/main/gate-status",
+        "Verify gate status returned with evaluations",
+        "GET /api/audit-logs with action filter",
+        "Verify simulated audit entries present"
+      ],
+      "expectedResult": "Full sprint completes; gate status visible; audit logs recorded",
+      "priority": "High"
+    },
+    {
+      "id": "TC-E2E-02",
+      "title": "Project creation → repo config → bootstrap → sprint flow",
+      "type": "e2e",
+      "requirementIds": ["REQ-REPO-01", "REQ-BOOT-01", "REQ-SPRINT-01"],
+      "targetComponents": ["ProjectController", "BootstrapService", "SimulatedSprintService"],
+      "preconditions": ["Backend running", "Authenticated user"],
+      "steps": [
+        "POST /api/projects — create project",
+        "PUT /api/projects/{id}/repo — configure repo",
+        "POST /api/orchestrator/bootstrap — prompt to app",
+        "POST /api/projects/{id}/simulated-sprint — run sprint"
+      ],
+      "expectedResult": "All four endpoints succeed; data flows correctly through pipeline",
+      "priority": "Low"
+    },
+    {
+      "id": "TC-FRONT-01",
+      "title": "Quality & Agents tab loads gate status for a project",
+      "type": "e2e",
+      "requirementIds": ["REQ-GATE-04", "REQ-UI-01"],
+      "targetComponents": ["ProjectDetailScreen (Flutter)", "QualityGateService"],
+      "preconditions": ["Frontend running", "Project exists with gate evaluations"],
+      "steps": [
+        "Navigate to project detail screen",
+        "Tap 'Quality & Agents' tab",
+        "Verify gate status cards render (Test, Compliance, Coordinated)",
+        "Verify pass/fail chips display correctly"
+      ],
+      "expectedResult": "Gate status loaded and displayed; no loading spinner remains",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-FRONT-02",
+      "title": "Run Simulated Sprint button triggers flow and refreshes",
+      "type": "e2e",
+      "requirementIds": ["REQ-SPRINT-01", "REQ-UI-01"],
+      "targetComponents": ["ProjectDetailScreen (Flutter)", "SimulatedSprintService"],
+      "preconditions": ["Frontend running", "Project exists"],
+      "steps": [
+        "Navigate to Quality & Agents tab",
+        "Tap 'Run Simulated Sprint'",
+        "Wait for completion indicator",
+        "Verify gate status cards update with new data"
+      ],
+      "expectedResult": "Sprint triggered; gate status refreshes automatically",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-SCHEMA-01",
+      "title": "TestResult and ComplianceResult entities persist correctly",
+      "type": "integration",
+      "requirementIds": ["REQ-SPRINT-02", "REQ-STORAGE-01"],
+      "targetComponents": ["TestResultRepository", "ComplianceResultRepository"],
+      "preconditions": ["Database available"],
+      "steps": [
+        "Create and save TestResult with all fields",
+        "Query by projectId and branch",
+        "Verify all fields round-trip correctly",
+        "Repeat for ComplianceResult"
+      ],
+      "expectedResult": "Entities persisted and retrieved with all fields intact",
+      "priority": "High"
+    },
+    {
+      "id": "TC-SCHEMA-02",
+      "title": "GateEvaluation persists and queryable by project+branch",
+      "type": "integration",
+      "requirementIds": ["REQ-STORAGE-01", "REQ-GATE-04"],
+      "targetComponents": ["GateEvaluationRepository"],
+      "preconditions": ["Database available", "GateEvaluation records exist"],
+      "steps": [
+        "Query findTopByProjectIdAndGateTypeAndBranchOrderByEvaluatedAtDesc",
+        "Verify returns most recent evaluation"
+      ],
+      "expectedResult": "Latest gate evaluation returned correctly",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DB-01",
+      "title": "Flyway migrations V1–V6 apply without error",
+      "type": "integration",
+      "requirementIds": ["REQ-DB-01"],
+      "targetComponents": ["Flyway migrations"],
+      "preconditions": ["Empty database"],
+      "steps": [
+        "Start application with spring.flyway.enabled=true",
+        "Verify all 6 migrations applied",
+        "Verify test_results, compliance_results, gate_evaluations tables exist",
+        "Verify audit_logs has simulation column"
+      ],
+      "expectedResult": "All migrations apply; schema matches design docs",
+      "priority": "High"
+    },
+    {
+      "id": "TC-DB-02",
+      "title": "Simulation column migration on existing audit_logs table",
+      "type": "integration",
+      "requirementIds": ["REQ-DB-01", "REQ-SIM-01"],
+      "targetComponents": ["V6 migration"],
+      "preconditions": ["Database with existing audit_logs table (no simulation column)"],
+      "steps": [
+        "Run V6 migration",
+        "Verify simulation column added with default FALSE"
+      ],
+      "expectedResult": "Column added; existing rows default to false",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DEEPSEEK-01",
+      "title": "DeepSeek context includes all project and change info",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-01"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["Mock RestTemplate", "Mock PromptCatalog"],
+      "steps": [
+        "Call execute with context containing projectTitle, changeDescription, requirements",
+        "Capture request body",
+        "Verify user message includes all context values"
+      ],
+      "expectedResult": "All context fields present in the user message block",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DEEPSEEK-02",
+      "title": "DeepSeek response parsing handles missing choices gracefully",
+      "type": "unit",
+      "requirementIds": ["REQ-LLM-02"],
+      "targetComponents": ["DeepSeekAgentClient"],
+      "preconditions": ["Mock RestTemplate returns incomplete response"],
+      "steps": [
+        "Mock response with empty choices array",
+        "Call execute",
+        "Verify returns raw JSON as fallback, no NPE"
+      ],
+      "expectedResult": "Graceful fallback without exception",
+      "priority": "Medium"
+    },
+    {
+      "id": "TC-DEEPSEEK-03",
+      "title": "Conditional bean wiring: DeepSeek active only when API key set",
+      "type": "integration",
+      "requirementIds": ["REQ-LLM-01", "REQ-LLM-03"],
+      "targetComponents": ["LLMAgentClient", "DeepSeekAgentClient", "StubLLMAgentClient"],
+      "preconditions": ["Application context with DEEPSEEK_API_KEY set vs unset"],
+      "steps": [
+        "Case 1: DEEPSEEK_API_KEY set → verify DeepSeekAgentClient bean present, Stub absent",
+        "Case 2: DEEPSEEK_API_KEY unset → verify StubLLMAgentClient bean present, DeepSeek absent"
+      ],
+      "expectedResult": "Correct bean active based on API key presence",
+      "priority": "High"
+    }
+  ],
+  "untestedRequirements": [
+    "REQ-CLI-01 — CLI Extension (ucto init/sprint/agent/deploy) — no CLI test coverage yet",
+    "REQ-SCREEN-01 — Screen approval workflow e2e — pending UI automation",
+    "REQ-SCREEN-02 — Screen revision limit escalation — pending UI automation",
+    "REQ-ARCH-01 — Architect agent integration review — covered by stub responses but no real LLM test"
+  ],
+  "coverageSummary": {
+    "totalRequirements": 27,
+    "coveredRequirements": 23,
+    "coveragePercent": 85.2,
+    "testClassification": {
+      "unit": 38,
+      "integration": 15,
+      "e2e": 4,
+      "non-functional": 3,
+      "total": 60
+    },
+    "priorityBreakdown": {
+      "High": 32,
+      "Medium": 24,
+      "Low": 4
+    },
+    "llmSpecificTestCount": 14,
+    "simulationRelatedTestCount": 6
+  }
+}

@@ -1,8 +1,11 @@
 package com.ucto.backend.controller;
 
+import com.ucto.backend.dto.RepoConfigDTO;
+import com.ucto.backend.dto.RepoValidationException;
 import com.ucto.backend.entity.Project;
 import com.ucto.backend.service.AuditLogService;
 import com.ucto.backend.service.ProjectService;
+import com.ucto.backend.service.QualityGateService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,9 @@ public class ProjectController {
 
     @Autowired
     private AuditLogService auditLogService;
+
+    @Autowired
+    private QualityGateService qualityGateService;
 
     @PostMapping
     public ResponseEntity<?> createProject(@RequestBody Map<String, String> request,
@@ -61,7 +67,7 @@ public class ProjectController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProject(@PathVariable Long id,@RequestBody Map<String, String> request,
+    public ResponseEntity<?> updateProject(@PathVariable Long id, @RequestBody Map<String, String> request,
                                             Authentication auth,
                                             HttpServletRequest httpRequest) {
         Project project = projectService.getProjectById(id);
@@ -70,47 +76,91 @@ public class ProjectController {
         }
 
         Long userId = getUserId(auth);
-        // Owner-only authorization check
         if (!project.getOwnerId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Only the project owner can update this project"));
         }
 
         Project updated = projectService.updateProject(
-                id,
-                request.get("title"),
-                request.get("description"),
-                request.get("status")
-        );
+                id, request.get("title"), request.get("description"), request.get("status"));
 
         auditLogService.log(userId, id, "PROJECT_UPDATE",
                 "Updated project: " + updated.getTitle(), httpRequest.getRemoteAddr(), true);
-
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProject(@PathVariable Long id,
-                                           Authentication auth,
-                                           HttpServletRequest httpRequest) {
+                                            Authentication auth,
+                                            HttpServletRequest httpRequest) {
         Project project = projectService.getProjectById(id);
-        if (project == null) {
-            return ResponseEntity.notFound().build();
-        }
+        if (project == null) return ResponseEntity.notFound().build();
 
         Long userId = getUserId(auth);
-        // Owner-only authorization check
         if (!project.getOwnerId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Only the project owner can delete this project"));
         }
 
         projectService.deleteProject(id);
-
         auditLogService.log(userId, id, "PROJECT_DELETE",
                 "Deleted project: " + project.getTitle(), httpRequest.getRemoteAddr(), true);
-
         return ResponseEntity.ok(Map.of("message", "Project deleted successfully"));
+    }
+
+    // ── Repo configuration endpoints ──
+
+    @GetMapping("/{id}/repo")
+    public ResponseEntity<?> getRepoConfig(@PathVariable Long id, Authentication auth) {
+        Project project = projectService.getProjectById(id);
+        if (project == null) return ResponseEntity.notFound().build();
+        if (!canAccessProject(project, getUserId(auth)))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied"));
+
+        RepoConfigDTO config = projectService.getRepoConfig(id);
+        if (config == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(config);
+    }
+
+    @PutMapping("/{id}/repo")
+    public ResponseEntity<?> updateRepoConfig(@PathVariable Long id, @RequestBody RepoConfigDTO config,
+                                               Authentication auth, HttpServletRequest httpRequest) {
+        Project project = projectService.getProjectById(id);
+        if (project == null) return ResponseEntity.notFound().build();
+
+        Long userId = getUserId(auth);
+        if (!project.getOwnerId().equals(userId))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Only the project owner can update repo configuration"));
+
+        try {
+            RepoConfigDTO updated = projectService.updateRepoConfig(id, config);
+            if (updated == null) return ResponseEntity.notFound().build();
+            auditLogService.log(userId, id, "PROJECT_REPO_UPDATE",
+                    "Updated repo config for project " + id, httpRequest.getRemoteAddr(), true);
+            return ResponseEntity.ok(updated);
+        } catch (RepoValidationException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── Quality gate endpoints ──
+
+    @GetMapping("/{id}/branches/{branch}/gate-status")
+    public ResponseEntity<?> getGateStatus(@PathVariable Long id, @PathVariable String branch,
+                                            Authentication auth) {
+        Project project = projectService.getProjectById(id);
+        if (project == null) return ResponseEntity.notFound().build();
+        if (!canAccessProject(project, getUserId(auth)))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access denied"));
+
+        return ResponseEntity.ok(qualityGateService.getGateStatus(id, branch));
+    }
+
+    private boolean canAccessProject(Project project, Long userId) {
+        if (project.getOwnerId().equals(userId)) return true;
+        return projectService.getProjectMembers(project.getId()).stream()
+                .anyMatch(m -> m.getUserId().equals(userId));
     }
 
     private Long getUserId(Authentication auth) {

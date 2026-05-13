@@ -1,13 +1,9 @@
 package com.ucto.backend.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ucto.backend.config.TestRedisConfig;
-import com.ucto.backend.dto.AuthResponse;
-import com.ucto.backend.dto.LoginRequest;
-import com.ucto.backend.dto.RegisterRequest;
-import com.ucto.backend.service.AuditLogService;
-import com.ucto.backend.service.UserService;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,12 +13,17 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ucto.backend.config.TestRedisConfig;
+import com.ucto.backend.dto.AuthResponse;
+import com.ucto.backend.dto.LoginRequest;
+import com.ucto.backend.dto.RegisterRequest;
+import com.ucto.backend.service.AuditLogService;
+import com.ucto.backend.service.UserService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -48,7 +49,8 @@ class AuthControllerTest {
         AuthResponse.UserDto userDto = new AuthResponse.UserDto(1L, "test@test.com", "FOUNDER", "Test");
         AuthResponse mockResponse = new AuthResponse("access", "refresh", userDto);
 
-        when(userService.registerUser(anyString(), anyString(), anyString(), anyString(), anyString()))
+        // Use any() to match null for the name parameter
+        when(userService.registerUser(anyString(), anyString(), anyString(), any(), anyString()))
                 .thenReturn(mockResponse);
 
         RegisterRequest request = new RegisterRequest("test@test.com", "password123", "FOUNDER");
@@ -64,7 +66,7 @@ class AuthControllerTest {
 
     @Test
     void register_WithExistingEmail_ShouldReturn400() throws Exception {
-        when(userService.registerUser(anyString(), anyString(), anyString(), anyString(), anyString()))
+        when(userService.registerUser(anyString(), anyString(), anyString(), any(), anyString()))
                 .thenThrow(new RuntimeException("Email already registered"));
 
         RegisterRequest request = new RegisterRequest("existing@test.com", "password", "FOUNDER");
@@ -78,6 +80,7 @@ class AuthControllerTest {
 
     @Test
     void register_WithInvalidRole_ShouldReturn400() throws Exception {
+        // Validation catches invalid role before reaching the service
         String invalidJson = """
                 {
                     "email": "test@test.com",
@@ -89,7 +92,8 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidJson))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists());
     }
 
     @Test

@@ -377,7 +377,7 @@
     },
     {
       "name": "bloc",
-      "version": "9.2.0",
+      "version": "9.2.1",
       "dependencies": [
         "meta"
       ]
@@ -412,7 +412,7 @@
     },
     {
       "name": "url_launcher_web",
-      "version": "2.4.2",
+      "version": "2.4.3",
       "dependencies": [
         "flutter",
         "flutter_web_plugins",

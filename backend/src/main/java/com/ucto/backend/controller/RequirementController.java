@@ -53,13 +53,23 @@ public class RequirementController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateRequirement(@PathVariable Long id,
-                                                @RequestBody Map<String, String> request) {
+                                                 @RequestBody Map<String, String> request) {
         Requirement req = requirementRepository.findById(id).orElse(null);
         if (req == null) return ResponseEntity.notFound().build();
 
         if (request.containsKey("title")) req.setTitle(request.get("title"));
         if (request.containsKey("description")) req.setDescription(request.get("description"));
         if (request.containsKey("status")) req.setStatus(request.get("status"));
+
+        // Enforce max 3 clarification rounds per docs/ucto_playbook.md
+        if (request.containsKey("clarificationRound")) {
+            int round = Integer.parseInt(request.get("clarificationRound"));
+            if (round > 3) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Maximum clarification rounds (3) reached"));
+            }
+            req.setClarificationRound(round);
+        }
 
         req = requirementRepository.save(req);
         return ResponseEntity.ok(req);

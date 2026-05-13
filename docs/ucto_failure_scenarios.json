@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "title": "UCTO Failure Mode & Chaos Test Scenarios",
+    "generatedAt": "2026-05-13",
+    "totalScenarios": 22,
+    "categories": ["LLM/DeepSeek", "Circuit Breaker", "Database", "DTO/JSON", "Configuration", "Infrastructure", "Git/Workspace", "Concurrency"]
+  },
+  "failureScenarios": [
+    {
+      "id": "F-DEEPSEEK-001",
+      "description": "DeepSeek API is completely down (HTTP 503) during a simulated sprint",
+      "simulationApproach": "Mock RestTemplate.exchange() to return ResponseEntity with 503 status code for all prompt keys",
+      "affectedComponents": ["DeepSeekAgentClient", "SimulatedSprintService"],
+      "expectedBehavior": "DeepSeekAgentClient returns error JSON '{\"error\":\"DeepSeek API error: 503...\"}'. SimulatedSprintService.parseOrFallback catches parse failure, logs warning, uses empty DTO fallback. Sprint completes with all 5 steps marked COMPLETED but with empty/zero test results. No uncaught exception. User sees sprint completed with no gate failures (empty defaults).",
+      "requirementIds": ["UCTO-REQ-020", "UCTO-REQ-017"]
+    },
+    {
+      "id": "F-DEEPSEEK-002",
+      "description": "DeepSeek API is slow (>30s timeout) during a simulated sprint",
+      "simulationApproach": "Mock RestTemplate.exchange() to throw ResourceAccessException with 'Read timed out' after 31s delay. Or use WireMock with fixed delay.",
+      "affectedComponents": ["DeepSeekAgentClient", "SimulatedSprintService"],
+      "expectedBehavior": "DeepSeekAgentClient catches timeout exception, returns error JSON '{\"error\":\"DeepSeek API call failed: Read timed out\"}'. SimulatedSprintService.parseOrFallback falls back to empty DTO. Sprint continues without crashing. Warning logged for each timed-out agent call.",
+      "requirementIds": ["UCTO-REQ-020"]
+    },
+    {
+      "id": "F-DEEPSEEK-003",
+      "description": "DeepSeek API returns HTTP 429 (rate limited)",
+      "simulationApproach": "Mock RestTemplate.exchange() to return 429 Too Many Requests with retry-after header. Test validates SprintService does not retry indefinitely.",
+      "affectedComponents": ["DeepSeekAgentClient", "SimulatedSprintService"],
+      "expectedBehavior": "DeepSeekAgentClient returns error JSON with '429' and 'Rate limit exceeded' message. parseOrFallback falls back to empty DTO. Sprint completes. No infinite retry loop. Audit log records the rate-limit event.",
+      "requirementIds": ["UCTO-REQ-020"]
+    },
+    {
+      "id": "F-DEEPSEEK-004",
+      "description": "DeepSeek returns malformed JSON (no valid structure, extra nesting, truncated)",
+      "simulationApproach": "Mock RestTemplate to return 200 with body: '{\"choices\":[{\"message\":{\"content\":\"something unstructured instead of JSON\"}}]}'. Simulates LLM hallucinating non-JSON output.",
+      "affectedComponents": ["DeepSeekAgentClient", "SimulatedSprintService", "All agent DTOs"],
+      "expectedBehavior": "parseOrFallback attempts Jackson parse on the content string; if content itself isn't valid JSON for the target DTO, parse fails → warning logged → empty DTO returned. BA/Architect/Dev/Tester/Compliance all use empty fallbacks. Sprint response shows zero counts. No exception propagates to HTTP layer.",
+      "requirementIds": ["UCTO-REQ-017", "UCTO-REQ-021", "UCTO-REQ-025"]
+    },
+    {
+      "id": "F-DEEPSEEK-005",
+      "description": "DeepSeek returns valid JSON but with wrong schema (e.g., missing all required fields)",
+      "simulationApproach": "Mock LLM to return '{\"unexpected\":\"fields\",\"completely\":\"wrong\"}' for all prompt keys. The content is valid JSON but doesn't match expected DTO structure.",
+      "affectedComponents": ["SimulatedSprintService", "All agent DTOs"],
+      "expectedBehavior": "Jackson parses the JSON successfully (ignoreUnknown=true), but all expected fields are null/empty/default. DTO defaults (empty lists, zero counts, empty strings) are used. Sprint continues. No crash. User sees empty results.",
+      "requirementIds": ["UCTO-REQ-017", "UCTO-REQ-030"]
+    },
+    {
+      "id": "F-DEEPSEEK-006",
+      "description": "DeepSeek response contains partial content (truncated mid-object)",
+      "simulationApproach": "Mock DeepSeek to return a truncated JSON string: '{\"components\":[{\"name\":\"API\"'. Jackson fails to parse → empty fallback.",
+      "affectedComponents": ["DeepSeekAgentClient", "SimulatedSprintService"],
+      "expectedBehavior": "Jackson throws JsonParseException on truncated JSON. parseOrFallback catches it, logs warning, returns empty DTO instance. Sprint continues. No partial data corruption.",
+      "requirementIds": ["UCTO-REQ-017", "UCTO-REQ-021"]
+    },
+    {
+      "id": "F-DEEPSEEK-007",
+      "description": "DeepSeek response has empty choices array",
+      "simulationApproach": "Mock RestTemplate to return 200 with body: '{\"choices\":[]}'",
+      "affectedComponents": ["DeepSeekAgentClient"],
+      "expectedBehavior": "DeepSeekAgentClient tries to read choices.get(0), catches exception, returns raw JSON as fallback. parseOrFallback then fails to parse raw JSON as DTO → empty DTO fallback. No IndexOutOfBoundsException. Sprint completes.",
+      "requirementIds": ["UCTO-REQ-021"]
+    },
+    {
+      "id": "F-DEEPSEEK-008",
+      "description": "DeepSeek API key is not configured (Stub mode)",
+      "simulationApproach": "Set ucto.llm.deepseek.api-key to empty in application.properties. Verify StubLLMAgentClient is autowired instead of DeepSeekAgentClient.",
+      "affectedComponents": ["LLMAgentClient", "DeepSeekAgentClient", "StubLLMAgentClient"],
+      "expectedBehavior": "DeepSeekAgentClient.isAvailable() returns false. StubLLMAgentClient.execute() returns placeholder JSON. All agent flows work with synthetic data. No errors. DeepSeekAgentClient never called.",
+      "requirementIds": ["UCTO-REQ-022", "UCTO-REQ-023"]
+    },
+    {
+      "id": "F-DEEPSEEK-009",
+      "description": "DeepSeek circuit breaker opens after repeated failures, then recovers after cooldown",
+      "simulationApproach": "Mock DeepSeek to return HTTP 503 for 3 consecutive calls (exceeding the 3-failure threshold), assert 4th call fast-fails without HTTP. Then advance time past 30s cooldown and mock a successful response to verify recovery.",
+      "affectedComponents": ["DeepSeekAgentClient", "SimulatedSprintService"],
+      "expectedBehavior": "First 3 calls fail with error JSON. 4th call returns JSON with \"circuitBreakerOpen\": true without calling HTTP. After 30s cooldown, a probe call succeeds, circuit resets to CLOSED. SimulatedSprintService.parseOrFallback handles circuit-breaker error JSON the same as any error (empty DTO fallback). Sprint completes normally even during open state.",
+      "requirementIds": ["UCTO-REQ-020"]
+    },
+    {
+      "id": "F-CONFIG-001",
+      "description": "DeepSeek API URL is misconfigured (wrong endpoint)",
+      "simulationApproach": "Set ucto.llm.deepseek.api-url to 'https://api.example.com/v1/nonexistent' (invalid endpoint). RestTemplate returns 404.",
+      "affectedComponents": ["DeepSeekAgentClient"],
+      "expectedBehavior": "DeepSeekAgentClient makes HTTP call to wrong URL, receives 404, returns error JSON. parseOrFallback in SimulatedSprintService falls back to empty DTO. Sprint completes without crash. Clear error message in logs.",
+      "requirementIds": ["UCTO-REQ-020"]
+    },
+    {
+      "id": "F-CONFIG-002",
+      "description": "Repo token ref points to non-existent credential",
+      "simulationApproach": "Set repoTokenRef to 'cred_nonexistent' while REPO_CREDENTIALS_JSON is empty or missing the reference.",
+      "affectedComponents": ["RepoWorkspaceService"],
+      "expectedBehavior": "resolveToken() returns null. prepareWorkspace() uses repoUrl as-is (no token substitution). If repo is private, git clone will fail with authentication error -> RepoWorkspaceException thrown -> workspace_error event. No credential leak. No crash in token resolution.",
+      "requirementIds": ["UCTO-REQ-004", "UCTO-REQ-037"]
+    },
+    {
+      "id": "F-DB-001",
+      "description": "PostgreSQL connection fails during TestResult persistence",
+      "simulationApproach": "Use Testcontainers to stop the DB container mid-sprint. Or mock TestResultRepository.save() to throw DataAccessException.",
+      "affectedComponents": ["SimulatedSprintService", "TestResultRepository", "ComplianceResultRepository"],
+      "expectedBehavior": "Sprint throws DataAccessException from repository.save(). Currently NO catch block in SimulatedSprintService for DB exceptions — this would propagate as 500 to the API caller. The first 3 agent steps (BA, Architect, Dev) would complete, but Tester/Compliance steps would fail. Gate evaluation would not be called. Audit log entries for first 3 steps would already be saved. The sprint response would be a 500 error with partial results lost.",
+      "requirementIds": ["UCTO-REQ-033", "UCTO-REQ-034"]
+    },
+    {
+      "id": "F-DB-002",
+      "description": "DB connection pool exhaustion during concurrent sprints",
+      "simulationApproach": "Fire 20 concurrent simulated-sprint requests via JMeter/k6 against test environment. Monitor HikariCP pool exhaustion.",
+      "affectedComponents": ["SimulatedSprintService", "All repositories", "HikariCP"],
+      "expectedBehavior": "As connections saturate, requests queue. Some may timeout (30s default). Those that succeed should have correct data. No data corruption (each sprint has unique correlationId). Connection pool should recover after load subsides. Expected: some 503/500 under extreme load, but no DB corruption.",
+      "requirementIds": ["UCTO-REQ-033", "UCTO-REQ-035"]
+    },
+    {
+      "id": "F-DTO-001",
+      "description": "BaRequirementsOutput receives JSON with 'epics[]' instead of 'requirements[]' (schema drift)",
+      "simulationApproach": "Return valid JSON with 'epics' key instead of 'requirements': '{\"epics\":[{\"id\":\"E1\"}]}' — LLM output format changes due to prompt drift.",
+      "affectedComponents": ["BaRequirementsOutput", "SimulatedSprintService"],
+      "expectedBehavior": "Jackson parses successfully (ignoreUnknown=true). requirements list is empty (no 'requirements' key found). sprint continues with BaSummary showing 0 requirements. requirementsSummary string is empty. No crash. Downstream agents receive empty context but still complete.",
+      "requirementIds": ["UCTO-REQ-025", "UCTO-REQ-030"]
+    },
+    {
+      "id": "F-DTO-002",
+      "description": "TesterOutput receives non-numeric 'testsRun' (string instead of int)",
+      "simulationApproach": "Return JSON with 'testsRun':'ten' instead of 'testsRun':10. Jackson will fail to coerce string to int.",
+      "affectedComponents": ["TesterOutput", "SimulatedSprintService"],
+      "expectedBehavior": "Jackson throws JsonMappingException (can't coerce String to int). parseOrFallback catches it, logs warning, returns empty TesterOutput (all zeros). TestResult saved with zeros. Sprint continues. No crash.",
+      "requirementIds": ["UCTO-REQ-028", "UCTO-REQ-017"]
+    },
+    {
+      "id": "F-DTO-003",
+      "description": "DevImplementOutput receives 'filesToChange' as a string instead of array",
+      "simulationApproach": "Return '{\"filesToChange\":\"this should be an array\"}' instead of proper array. Jackson type mismatch.",
+      "affectedComponents": ["DevImplementOutput", "SimulatedSprintService"],
+      "expectedBehavior": "Jackson throws JsonMappingException (can't coerce String to List). parseOrFallback returns empty DevImplementOutput. filesToChange list is empty. Sprint continues with DevSummary showing 0 file changes.",
+      "requirementIds": ["UCTO-REQ-027", "UCTO-REQ-017", "UCTO-REQ-030"]
+    },
+    {
+      "id": "F-CONCUR-001",
+      "description": "Two concurrent simulated sprints for the same project",
+      "simulationApproach": "Fire two POST /api/projects/{id}/simulated-sprint requests simultaneously. Use CountDownLatch to synchronize both threads before they start.",
+      "affectedComponents": ["SimulatedSprintService", "ProjectService"],
+      "expectedBehavior": "Both sprints complete successfully with unique correlationIds. TestResult and ComplianceResult records are distinct. Gate evaluations reference correct test/compliance results. No Shared mutable state issues since each sprint creates new entities. Workspace prep may have race condition on source/ directory (fetch + reset). Expected: both succeed, but workspace state depends on which finishes last.",
+      "requirementIds": ["UCTO-REQ-011"]
+    },
+    {
+      "id": "F-REDIS-001",
+      "description": "Redis server is unavailable when AgentEventListener subscribes",
+      "simulationApproach": "Start application with Redis down. RedisMessageListenerContainer will fail during subscribeToAgentTopics().",
+      "affectedComponents": ["AgentEventListener", "RedisConfig"],
+      "expectedBehavior": "Application fails to start if Redis is required. Currently RedisConfig has @Profile('!test') but no graceful degradation. Application context may fail to load. AgentEventListener cannot subscribe to topics. Sprint service still works (doesn't use Redis for simulation mode). Expected: application fails to start with clear 'Redis connection refused' error.",
+      "requirementIds": ["UCTO-REQ-011"]
+    },
+    {
+      "id": "F-REDIS-002",
+      "description": "Redis connection lost during active agent event processing",
+      "simulationApproach": "Start application with Redis, then stop Redis service. AgentEventListener receives events via already-subscribed topics.",
+      "affectedComponents": ["AgentEventListener"],
+      "expectedBehavior": "Redis Pub/Sub subscriptions are based on existing connections. If Redis dies, RedisMessageListenerContainer will attempt reconnection (default behavior). During downtime, events are lost (Redis Pub/Sub has no persistence). AgentEventListener stops receiving events. Sprint service (direct calls) continues working. After Redis restarts, subscriptions need to re-establish.",
+      "requirementIds": ["UCTO-REQ-011"]
+    },
+    {
+      "id": "F-GIT-001",
+      "description": "Git clone fails because repo URL is invalid or unreachable",
+      "simulationApproach": "Set repoUrl to 'https://github.com/nonexistent-org/nonexistent-repo.git'. Call prepareWorkspace(project, simulation=false). git clone will exit with non-zero code.",
+      "affectedComponents": ["RepoWorkspaceService"],
+      "expectedBehavior": "ProcessBuilder runs git clone, exits with 128. Clone output contains 'Repository not found'. RepoWorkspaceService attempts retries (default 3). If all retries fail, throws RepoWorkspaceException with 'Clone failed after 3 attempt(s). Last error: ...'. Audit log records REPO_CLONE_FAILED.",
+      "requirementIds": ["UCTO-REQ-037"]
+    },
+    {
+      "id": "F-GIT-002",
+      "description": "Git clone retries exhausted — all clone attempts fail after timeout",
+      "simulationApproach": "Set repoUrl to an unreachable host. Assert all 3 clone attempts are made (default max-attempts=3), each timing out after 120s. Verify final RepoWorkspaceException message includes attempt count and last error.",
+      "affectedComponents": ["RepoWorkspaceService"],
+      "expectedBehavior": "RepoWorkspaceService attempts clone up to 3 times with 5s backoff between retries. After each failed attempt, partial clone artifacts are cleaned up. After all retries exhausted, throws RepoWorkspaceException with message: 'Clone failed for project {id} after 3 attempt(s). Last error: ...'. Audit log records REPO_CLONE_FAILED. No partial clone data remains on disk.",
+      "requirementIds": ["UCTO-REQ-037"]
+    },
+    {
+      "id": "F-LLM-001",
+      "description": "All 5 agents return invalid JSON simultaneously (total LLM failure)",
+      "simulationApproach": "Mock LLMAgentClient.execute() to return '{invalid json forever' for every prompt key. Simulates catastrophic LLM failure (model down, context overflow, etc.).",
+      "affectedComponents": ["SimulatedSprintService", "All agent DTOs"],
+      "expectedBehavior": "All 5 parseOrFallback calls fail → all 5 agents use empty DTOs. BA: 0 requirements, empty summary. Architect: 0 components, no risks. Dev: 0 file changes, no rationale. Tester: 0 tests, 0% coverage, PASS status (default). Compliance: PASS, LOW severity. Gates: test 'passes' (0 failures, 0% coverage fails if threshold > 0). All audit logs recorded. Sprint completes with empty summaries. User sees sprint completed but with no meaningful output. No crash.",
+      "requirementIds": ["UCTO-REQ-017", "UCTO-REQ-025", "UCTO-REQ-026", "UCTO-REQ-027", "UCTO-REQ-028", "UCTO-REQ-029"]
+    }
+  ],
+  "coverageGaps": [
+    "No exception handler for DB failures in SimulatedSprintService — F-DB-001 would currently result in a 500 error with no partial-sprint rollback",
+    "No Redis graceful degradation in MVP — application won't start without Redis (F-REDIS-001)"
+  ]
+}

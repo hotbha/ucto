@@ -84,6 +84,17 @@
 - [x] Frontend: Password Reset screens (forgot_password_screen.dart, reset_password_screen.dart, routes in main.dart, link in login_screen.dart)
 - [x] Frontend: Email Verification screen (verify_email_screen.dart with token-based verification flow)
 
+## Completed May 2026 Session — BA Chat Test Suite
+- [x] Backend: BAChatServiceTest.java — 16 tests covering greeting, clarification, decision extraction, escalation, finalization, history, ambiguity detection, round tracking, usage metering integration, agent trigger on each message
+- [x] Backend: BAChatControllerTest.java — 7 tests covering send message, 402 payment required, chat history, missing fields, empty message, auth enforcement
+- [x] Backend: UsageMeterServiceTest.java — 10 tests covering monthly run counter, per-user tracking, start-of-month boundary, project count tracking
+- [x] Backend: RequirementControllerTest.java — 8 tests covering CRUD, status transition, clarification round cap, 400/404 error handling
+- [x] Backend: SubscriptionControllerTest.java — 8 tests covering plans listing, my subscription, free defaults, upgrade, trial, auth enforcement
+- [x] Frontend: ba_chat_model_test.dart — 11 tests covering BAChatMessage and BAChatHistoryResponse fromJson for all message types
+- [x] Frontend: ba_chat_bloc_test.dart — 10 test cases covering send message, load history, clear chat, error handling, all message types
+- [x] Frontend: ba_chat_screen_test.dart — 13 widget tests covering all UI states (initial, loading, error, send, escalation banner, complete banner, empty, message bubble)
+- [x] IMPLEMENTATION_TODO.md updated with test suite completion
+
 ## Remaining — Future (Infrastructure / Non-Code)
 - [ ] C2: Domain + SSL Configuration (nginx certbot for ucto.app)
 - [ ] C3: Database Backup Configuration (automated PostgreSQL backups)

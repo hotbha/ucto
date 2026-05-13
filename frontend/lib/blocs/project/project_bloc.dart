@@ -39,6 +39,7 @@ class ProjectBloc extends Bloc<ProjectEvent, ProjectState> {
       }, auth: true);
       final project = Project.fromJson(data as Map<String, dynamic>);
       emit(ProjectCreated(project));
+      add(LoadProjects());
     } catch (e) {
       emit(ProjectError(e.toString()));
     }

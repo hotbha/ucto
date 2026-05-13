@@ -210,3 +210,37 @@ When scaling beyond MVP, replace Redis Pub/Sub with **RabbitMQ** for:
 - Delivery acknowledgments and retry queues
 
 The topic naming convention (`agent.<type>.<action>`) maps directly to RabbitMQ routing keys, making migration a configuration change rather than a code rewrite.
+
+## Next‑Gen Features
+
+Three companion documents define the next evolution of the agent orchestration system. Each is designed to be implemented directly from its specification.
+
+### Repo‑Aware Developer Agent
+**Document:** [repo_aware_dev_agent_design.md](repo_aware_dev_agent_design.md)
+
+Extends the developer agent to: (a) link projects to Git repositories via new `repoUrl`, `repoProvider`, `repoBranch`, and `repoTokenRef` fields on the `Project` entity; (b) prepare local workspaces via clone/pull before processing events; (c) generate branches, commits, and PRs as concrete outputs of agent runs. Introduces `RepoWorkspaceService` and the `agent.developer.workspace_ready` / `agent.developer.workspace_error` topics. All repo operations are audited. Implements retry policy and timeouts for Git operations.
+
+### Prompt‑to‑App Bootstrap
+**Document:** [prompt_to_app_bootstrap_design.md](prompt_to_app_bootstrap_design.md)
+
+Defines the end‑to‑end flow from a single user prompt → BA agent requirements → Architect agent design → Developer agent skeleton generation → project registration with linked repository. MVP supports the `spring-boot-react-postgres` stack. Reuses existing agent topics (`agent.ba.*`, `agent.architect.*`, `agent.developer.*`). Adds `SkeletonGeneratorService` and a `POST /api/projects/bootstrap` endpoint. Non‑goals for later phases include Next.js, Python backends, and mobile Flutter bootstrap.
+
+### Quality Gates & Simulation Mode
+**Document:** [quality_gates_and_simulation_design.md](quality_gates_and_simulation_design.md)
+
+Introduces structured quality gates (test and compliance) that block merges unless all conditions are met. Defines new `TestResult`, `ComplianceResult`, and `GateEvaluation` JPA entities. Adds a boolean `simulation` flag to agent events that propagates through the pipeline — simulating analysis, planning, and evaluation while forbidding real Git pushes, PR merges, and external side effects. Simulated vs real runs are recorded separately in the audit log. New `QualityGateService` orchestrates gate evaluation with configurable coverage thresholds.
+
+### Combined Impact on Topic Set
+With all three features, the full agent topic set becomes:
+
+```
+agent.ba.{trigger,complete,error,clarify}
+agent.developer.{trigger,complete,error,clarify,workspace_ready,workspace_error}
+agent.tester.{trigger,complete,error}
+agent.compliance.{trigger,complete,error}
+agent.ux.{trigger,complete,error,clarify}
+agent.architect.{trigger,complete,error}
+agent.pm.{trigger,complete,error}
+agent.documentation.{trigger,complete,error}
+```
+

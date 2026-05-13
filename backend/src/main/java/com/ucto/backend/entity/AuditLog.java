@@ -25,8 +25,11 @@ public class AuditLog {
     private String ipAddress;
     private boolean success;
 
+    private boolean simulation;
+
     @Column(nullable = false)
     private LocalDateTime timestamp;
+
 
     @PrePersist
     protected void onCreate() {
