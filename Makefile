@@ -2,15 +2,17 @@
 # UCTO - Build & Development Makefile
 # =============================================================================
 
-.PHONY: help backend-build backend-run frontend-get frontend-analyze frontend-build docker-build docker-up clean
+.PHONY: help backend-build backend-run backend-test backend-coverage frontend-get frontend-analyze frontend-build frontend-test docker-build docker-up clean
 
 help:
 	@echo "UCTO Build Commands:"
 	@echo "  make backend-build    - Compile the Spring Boot backend"
 	@echo "  make backend-run      - Run the Spring Boot backend (dev profile)"
+	@echo "  make backend-test     - Run backend tests with coverage (ops/run_backend_tests.bat)"
 	@echo "  make frontend-get     - Install Flutter dependencies"
 	@echo "  make frontend-analyze - Run Flutter static analysis"
 	@echo "  make frontend-build   - Build Flutter web (release)"
+	@echo "  make frontend-test    - Run frontend tests with coverage (ops/run_frontend_tests.bat)"
 	@echo "  make docker-build     - Build all Docker images"
 	@echo "  make docker-up        - Start all containers with Docker Compose"
 	@echo "  make clean            - Clean all build artifacts"
@@ -21,6 +23,9 @@ backend-build:
 
 backend-run:
 	cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+backend-test:
+	cd backend && ./mvnw clean test jacoco:report
 
 # Frontend
 frontend-get:
@@ -33,6 +38,9 @@ frontend-build:
 	cd frontend && flutter build web --release \
 		--dart-define=SERVER_HOST=192.168.1.100 \
 		--dart-define=SERVER_PORT=8080
+
+frontend-test:
+	cd frontend && flutter test --coverage
 
 # Docker
 docker-build:

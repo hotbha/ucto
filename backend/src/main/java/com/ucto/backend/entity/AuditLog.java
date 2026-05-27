@@ -58,6 +58,9 @@ public class AuditLog {
     public boolean isSuccess() { return success; }
     public void setSuccess(boolean success) { this.success = success; }
 
+    public boolean isSimulation() { return simulation; }
+    public void setSimulation(boolean simulation) { this.simulation = simulation; }
+
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 }

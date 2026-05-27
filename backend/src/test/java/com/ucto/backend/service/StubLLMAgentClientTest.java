@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,7 @@ import static org.mockito.Mockito.*;
  * Verifies that stub responses match expected JSON schemas.
  */
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class StubLLMAgentClientTest {
 
     @Mock
@@ -32,7 +34,7 @@ class StubLLMAgentClientTest {
         // Mock promptCatalog to always "have" the keys
         when(promptCatalog.hasPrompt(anyString())).thenReturn(true);
         client = new StubLLMAgentClient();
-        client.promptCatalog = promptCatalog;
+        ReflectionTestUtils.setField(client, "promptCatalog", promptCatalog);
     }
 
     @Test

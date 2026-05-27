@@ -232,7 +232,7 @@ class ProjectControllerTest {
         otherUser.setEmail("other@test.com");
         otherUser.setPassword(passwordEncoder.encode("password"));
         otherUser.setName("Other User");
-        otherUser.setPhone("9999999998");
+        otherUser.setPhoneNumber("9999999998");
         otherUser.setRole("USER");
         otherUser = userRepository.save(otherUser);
         String otherToken = jwtService.generateAccessToken(otherUser.getId(), otherUser.getEmail(), otherUser.getRole());

@@ -7,6 +7,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import com.ucto.backend.service.LLMAgentClient;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import static org.mockito.Mockito.mock;
@@ -47,5 +48,11 @@ public class TestRedisConfig {
     @Primary
     public JavaMailSender javaMailSender() {
         return mock(JavaMailSender.class);
+    }
+
+    @Bean
+    @Primary
+    public LLMAgentClient llmAgentClient() {
+        return mock(LLMAgentClient.class);
     }
 }

@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -64,16 +65,16 @@ class SimulatedSprintServiceTest {
         org.springframework.test.util.ReflectionTestUtils.setField(catalog, "prompts", prompts);
 
         llmClient = new StubLLMAgentClient();
-        llmClient.promptCatalog = catalog;
+        ReflectionTestUtils.setField(llmClient, "promptCatalog", catalog);
 
         service = new SimulatedSprintService();
-        service.projectService = projectService;
-        service.repoWorkspaceService = repoWorkspaceService;
-        service.auditLogService = auditLogService;
-        service.llmAgentClient = llmClient;
-        service.testResultRepository = testResultRepository;
-        service.complianceResultRepository = complianceResultRepository;
-        service.qualityGateService = qualityGateService;
+        ReflectionTestUtils.setField(service, "projectService", projectService);
+        ReflectionTestUtils.setField(service, "repoWorkspaceService", repoWorkspaceService);
+        ReflectionTestUtils.setField(service, "auditLogService", auditLogService);
+        ReflectionTestUtils.setField(service, "llmAgentClient", llmClient);
+        ReflectionTestUtils.setField(service, "testResultRepository", testResultRepository);
+        ReflectionTestUtils.setField(service, "complianceResultRepository", complianceResultRepository);
+        ReflectionTestUtils.setField(service, "qualityGateService", qualityGateService);
     }
 
     @Test
@@ -169,8 +170,8 @@ class SimulatedSprintServiceTest {
         assertTrue(response.getGateStatus().isOverallPass());
 
         // Verify audit log calls
-        verify(auditLogService, times(5)).logAuthAction(
-                isNull(), anyString(), anyString(), anyString(), eq(true), eq(true));
+        verify(auditLogService, times(5)).log(
+                isNull(), isNull(), anyString(), anyString(), anyString(), eq(true), eq(true));
 
         // Verify TestResult and ComplianceResult persisted
         verify(testResultRepository).save(testResultCaptor.capture());

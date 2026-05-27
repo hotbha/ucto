@@ -56,11 +56,16 @@ class DeepSeekAgentClientTest {
 
         // Mock PromptCatalog
         when(promptCatalog.getPrompt(eq("TEST_PROMPT"), any()))
-                .thenReturn(new PromptCatalog.PromptEntry(
-                        "TEST_PROMPT",
-                        "You are a test agent. Project: {{projectTitle}}",
-                        "{}"
-                ));
+                .thenAnswer(invocation -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> ctx = invocation.getArgument(1);
+                    String title = ctx != null ? ctx.getOrDefault("projectTitle", "") : "";
+                    return new PromptCatalog.PromptEntry(
+                            "TEST_PROMPT",
+                            "You are a test agent. Project: " + title,
+                            "{}"
+                    );
+                });
         when(promptCatalog.getPrompt(eq("UNKNOWN"), any())).thenReturn(null);
     }
 

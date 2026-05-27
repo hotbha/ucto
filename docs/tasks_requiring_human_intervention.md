@@ -375,19 +375,18 @@ ucto.llm.deepseek.temperature=0.3
 
 | # | Task | Required Before Launch | Done |
 |---|------|------------------------|------|
-| 1 | Chargebee site + API keys | ✅ Yes | ☐ |
-| 2 | Sentry DSN | ❌ No | ☐ |
-| 3 | Google OAuth Client ID | ✅ Yes | ☐ |
-| 4 | JWT Secret Key | ✅ Yes | ☐ |
-| 5 | PostgreSQL credentials | ✅ Yes | ☐ |
-| 6 | Redis credentials | ✅ Yes | ☐ |
-| 7 | SMTP credentials | ⚠️ For password reset | ☐ |
-| 8 | Docker registry + cloud deploy | ✅ Yes | ☐ |
-| 9 | SMS provider (OTP) | ❌ No (P2) | ☐ |
-| 10 | Code coverage thresholds | ❌ No | ☐ |
-| 11 | Load test infrastructure | ❌ No | ☐ |
-| 12 | Android keystore / iOS signing | ⚠️ For mobile | ☐ |
-| 13 | Push notifications | ❌ No | ☐ |
-| 14 | Domain + SSL certificate | ✅ Yes | ☐ |
-| **15** | **DeepSeek API Key** | ❌ **No (stub fallback)** | ☐ |
-
+| | 1 | Chargebee site + API keys | ✅ Yes | 🟡 PENDING (manual) |
+| | 2 | Sentry DSN | ❌ No | 🟢 **DONE** |
+| | 3 | Google OAuth Client ID | ✅ Yes | 🟡 PENDING (manual) |
+| | 4 | JWT Secret Key | ✅ Yes | 🟢 DONE |
+| | 5 | PostgreSQL credentials | ✅ Yes | 🟡 PENDING (manual) |
+| | 6 | Redis credentials | ✅ Yes | 🟢 Can run via Docker |
+| | 7 | SMTP credentials | ⚠️ For password reset | 🟡 PENDING (manual) |
+| | 8 | Docker registry + cloud deploy | ✅ Yes | 🟢 Configs generated |
+| | 9 | SMS provider (Fast2SMS OTP) | ❌ No (P2) | 🟢 **DONE** ❗ |
+| | 10 | Code coverage thresholds | ❌ No | 🟢 DONE |
+| | 11 | Load test infrastructure | ❌ No | ⚪ DEFERRED |
+| | 12 | Android keystore / iOS signing | ⚠️ For mobile | 🟢 Android done |
+| | 13 | Push notifications | ❌ No | 🟡 PENDING (manual) |
+| | 14 | Domain + SSL certificate | ✅ Yes | 🟢 Dev SSL done |
+| | **15** | **DeepSeek API Key** | ❌ **No (stub fallback)** | 🟢 Fallback configured |

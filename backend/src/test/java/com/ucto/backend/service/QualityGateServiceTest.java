@@ -34,8 +34,8 @@ class QualityGateServiceTest {
     @BeforeEach
     void setUp() {
         qualityGateService = new QualityGateService();
-        qualityGateService.gateEvaluationRepository = gateEvaluationRepository;
-        qualityGateService.auditLogService = auditLogService;
+        ReflectionTestUtils.setField(qualityGateService, "gateEvaluationRepository", gateEvaluationRepository);
+        ReflectionTestUtils.setField(qualityGateService, "auditLogService", auditLogService);
         ReflectionTestUtils.setField(qualityGateService, "coverageThreshold", 80.0);
     }
 

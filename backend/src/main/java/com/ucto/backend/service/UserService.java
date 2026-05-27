@@ -27,6 +27,9 @@ public class UserService {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private SmsService smsService;
+
     // In-memory OTP store (in production, use Redis with TTL)
     private final java.util.Map<String, String> otpStore = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -125,12 +128,11 @@ public class UserService {
     }
 
     public String sendOtp(String phoneNumber, String ipAddress) {
-        // In production, integrate with Zoho SMS / MSG91 / TextLocal
         String otp = String.format("%06d", new Random().nextInt(999999));
         otpStore.put(phoneNumber, otp);
 
-        // TODO: Send OTP via SMS gateway
-        // smsService.send(phoneNumber, "Your UCTO OTP is: " + otp);
+        // Send OTP via Fast2SMS
+        smsService.sendOtp(phoneNumber, otp);
 
         System.out.println("OTP for " + phoneNumber + ": " + otp); // Debug log
 

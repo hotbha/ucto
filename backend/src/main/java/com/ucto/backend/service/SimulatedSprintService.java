@@ -64,7 +64,7 @@ public class SimulatedSprintService {
         List<StepResult> steps = new ArrayList<>();
 
         // ── Step 1: BA Agent ──
-        auditLogService.logAuthAction(null, "AGENT_TRIGGER_BA_SIMULATED",
+        auditLogService.log(null, null, "AGENT_TRIGGER_BA_SIMULATED",
                 "Simulated BA for project " + projectId, "", true, true);
         Map<String, String> baCtx = new HashMap<>();
         baCtx.put("projectTitle", projectTitle);
@@ -86,7 +86,7 @@ public class SimulatedSprintService {
                 .collect(Collectors.joining("; "));
 
         // ── Step 2: Architect Agent ──
-        auditLogService.logAuthAction(null, "AGENT_TRIGGER_ARCHITECT_SIMULATED",
+        auditLogService.log(null, null, "AGENT_TRIGGER_ARCHITECT_SIMULATED",
                 "Simulated architect for project " + projectId, "", true, true);
         Map<String, String> archCtx = new HashMap<>();
         archCtx.put("projectTitle", projectTitle);
@@ -103,7 +103,7 @@ public class SimulatedSprintService {
 
 
         // ── Step 3: Developer Agent ──
-        auditLogService.logAuthAction(null, "AGENT_TRIGGER_DEVELOPER_SIMULATED",
+        auditLogService.log(null, null, "AGENT_TRIGGER_DEVELOPER_SIMULATED",
                 "Simulated dev for project " + projectId, "", true, true);
         if (project.getRepoUrl() != null && !project.getRepoUrl().isBlank())
             repoWorkspaceService.prepareWorkspace(project, true);
@@ -134,8 +134,8 @@ public class SimulatedSprintService {
 
         try {
             // ── Step 4: Tester Agent ──
-            auditLogService.logAuthAction(null, "AGENT_TRIGGER_TESTER_SIMULATED",
-                    "Simulated tester for project " + projectId, "", true, true);
+        auditLogService.log(null, null, "AGENT_TRIGGER_TESTER_SIMULATED",
+                "Simulated tester for project " + projectId, "", true, true);
             Map<String, String> testCtx = new HashMap<>();
             testCtx.put("projectTitle", projectTitle);
             testCtx.put("acceptanceCriteria", acSummary);
@@ -172,8 +172,8 @@ public class SimulatedSprintService {
             steps.add(new StepResult("TESTER", "COMPLETED", true, "evt_test_" + projectId));
 
             // ── Step 5: Compliance Agent ──
-            auditLogService.logAuthAction(null, "AGENT_TRIGGER_COMPLIANCE_SIMULATED",
-                    "Simulated compliance for project " + projectId, "", true, true);
+        auditLogService.log(null, null, "AGENT_TRIGGER_COMPLIANCE_SIMULATED",
+                "Simulated compliance for project " + projectId, "", true, true);
             Map<String, String> compCtx = new HashMap<>();
             compCtx.put("projectTitle", projectTitle);
             compCtx.put("requirements", requirementsSummary);

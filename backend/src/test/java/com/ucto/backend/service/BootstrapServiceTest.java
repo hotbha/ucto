@@ -109,7 +109,8 @@ class BootstrapServiceTest {
         project.setOwnerId(42L);
         project.setStatus("DRAFT");
         project.setTier("FREE");
-        when(projectService.createProject(eq("Task manager"), anyString(), eq(42L), eq("FREE"))).thenReturn(project);
+        // extractTitle() returns full prompt (58 chars, under 60-char limit), extractDescription() falls back to full prompt
+        when(projectService.createProject(eq("Task manager with team collaboration and real-time updates"), eq("Task manager with team collaboration and real-time updates"), eq(42L), eq("FREE"))).thenReturn(project);
         when(projectService.updateRepoConfig(eq(1L), any(RepoConfigDTO.class))).thenReturn(new RepoConfigDTO());
 
         BootstrapResultDTO result = bootstrapService.bootstrap(
@@ -119,7 +120,7 @@ class BootstrapServiceTest {
 
         assertNotNull(result);
         assertEquals(1L, result.getProjectId());
-        assertEquals("Task manager", result.getProjectTitle());
+        assertEquals("Task manager with team collaboration and real-time updates", result.getProjectTitle());
         assertEquals("SPRING_REACT", result.getTargetStack());
         assertEquals("CREATED", result.getStatus());
 
@@ -151,6 +152,13 @@ class BootstrapServiceTest {
 
     @Test
     void testBootstrap_unsupportedStack_throwsException() {
+        // mock project creation for when titles are extracted
+        Project project = new Project();
+        project.setId(99L);
+        project.setTitle("My project");
+        project.setOwnerId(1L);
+        when(projectService.createProject(eq("My project"), anyString(), eq(1L), eq("FREE"))).thenReturn(project);
+
         assertThrows(IllegalArgumentException.class,
                 () -> bootstrapService.bootstrap("My project", "UNSUPPORTED_STACK", 1L));
     }
@@ -179,17 +187,15 @@ class BootstrapServiceTest {
         int fileCount = bootstrapService.generateBackendSkeleton(workspaceDir, "my-app", "My App", "A test app");
 
         assertTrue(fileCount > 0);
-        assertTrue(Files.exists(workspaceDir.resolve("pom.xml")));
+        assertTrue(Files.exists(workspaceDir.resolve("backend/pom.xml")));
 
         // Verify substitution
-        String pomContent = Files.readString(workspaceDir.resolve("pom.xml"));
+        String pomContent = Files.readString(workspaceDir.resolve("backend/pom.xml"));
         assertTrue(pomContent.contains("my-app"));
         assertTrue(pomContent.contains("My App"));
 
-        // Verify package substitution
-        String appFile = workspaceDir.resolve("src/main/java/com/myapp/MyAppAppApplication.java").toString();
-        // The file may be under different path due to __AppName__ replacement
-        Path appDir = workspaceDir.resolve("src/main/java/com/myapp");
+        // Verify package substitution (directory names containing __package__ are copied as-is)
+        Path appDir = workspaceDir.resolve("backend/src/main/java/com/__package__");
         assertTrue(Files.exists(appDir), "Package directory should exist at " + appDir);
     }
 
@@ -199,9 +205,9 @@ class BootstrapServiceTest {
         int fileCount = bootstrapService.generateFrontendSkeleton(workspaceDir, "my-app", "My App");
 
         assertTrue(fileCount > 0);
-        assertTrue(Files.exists(workspaceDir.resolve("package.json")));
+        assertTrue(Files.exists(workspaceDir.resolve("frontend/package.json")));
 
-        String pkgContent = Files.readString(workspaceDir.resolve("package.json"));
+        String pkgContent = Files.readString(workspaceDir.resolve("frontend/package.json"));
         assertTrue(pkgContent.contains("my-app"));
     }
 

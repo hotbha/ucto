@@ -48,16 +48,16 @@ class SimulatedSprintServiceDbFailureTest {
         ReflectionTestUtils.setField(catalog, "prompts", prompts);
 
         llmClient = new StubLLMAgentClient();
-        llmClient.promptCatalog = catalog;
+        ReflectionTestUtils.setField(llmClient, "promptCatalog", catalog);
 
         service = new SimulatedSprintService();
-        service.projectService = projectService;
-        service.repoWorkspaceService = repoWorkspaceService;
-        service.auditLogService = auditLogService;
-        service.llmAgentClient = llmClient;
-        service.testResultRepository = testResultRepository;
-        service.complianceResultRepository = complianceResultRepository;
-        service.qualityGateService = qualityGateService;
+        ReflectionTestUtils.setField(service, "projectService", projectService);
+        ReflectionTestUtils.setField(service, "repoWorkspaceService", repoWorkspaceService);
+        ReflectionTestUtils.setField(service, "auditLogService", auditLogService);
+        ReflectionTestUtils.setField(service, "llmAgentClient", llmClient);
+        ReflectionTestUtils.setField(service, "testResultRepository", testResultRepository);
+        ReflectionTestUtils.setField(service, "complianceResultRepository", complianceResultRepository);
+        ReflectionTestUtils.setField(service, "qualityGateService", qualityGateService);
     }
 
     @Test
@@ -135,8 +135,11 @@ class SimulatedSprintServiceDbFailureTest {
         assertTrue(response.isDbError());
         assertTrue(response.getDbErrorMessage().contains("DB persistence failure"));
 
-        // Test result should have been saved (before the failure)
-        assertNull(response.getTestResult());
+        // Test result should have been saved successfully (before the compliance failure)
+        assertNotNull(response.getTestResult());
+        assertNotNull(response.getTestResult().getId());
+        assertEquals(100L, response.getTestResult().getId());
+        // Compliance result should be null (save failed)
         assertNull(response.getComplianceResult());
 
         // BA/Architect/Dev summaries should be present
